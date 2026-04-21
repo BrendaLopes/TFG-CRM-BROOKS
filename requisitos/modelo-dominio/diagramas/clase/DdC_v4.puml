@@ -1,0 +1,132 @@
+@startuml CRM_Brooks_DomainModel_v3
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam nodesep 40
+skinparam ranksep 50
+skinparam linetype polyline
+hide circle
+
+abstract class Usuario {
+  idUsuario
+  nombre
+  email
+  rol
+}
+
+class ResponsableComercial {
+  ' hereda de Usuario
+}
+
+class ConfiguradorComercial {
+  ' hereda de Usuario
+}
+
+Usuario <|-- ResponsableComercial
+Usuario <|-- ConfiguradorComercial
+
+class Lead {
+  idLead
+  nombreContacto
+  empresa
+  canalOrigen
+  estado
+}
+
+class Cliente {
+  idCliente
+  nombre
+  telefono
+  email
+  tipoCliente
+}
+
+class Oportunidad {
+  idOportunidad
+  estado
+  prioridad
+  motivoDescarte
+  motivoPerdida
+  fechaCreacion
+  fechaCierre
+}
+
+class HistorialNegociacion {
+  idHistorial
+  fechaHora
+  tipo : {llamada, email, visita, propuesta}
+  descripcion
+  resultado
+}
+
+class Propuesta {
+  idPropuesta
+  version
+  estado
+  importeTotal
+  fechaCreacion
+  fechaEnvio
+}
+
+class ServicioContratado {
+  idServicioContratado
+  estado
+  fechaTraspaso
+  notasOperacion
+}
+
+class ItemPropuesta {
+  idItem
+  cantidad
+  unidadCobro
+  frecuencia
+  precioSugerido
+  precioFinal
+}
+
+class TipoServicio {
+  idTipoServicio
+  nombre
+  modalidad
+  descripcion
+}
+
+class Residuo {
+  idResiduo
+  nombre
+  categoria
+}
+
+class FormularioCotizacion {
+  idFormulario
+  nombre
+  version
+}
+
+class ReglaCotizacion {
+  idRegla
+  descripcion
+  criterio : expresión lógica
+}
+
+' ── flujo principal top-down ──
+Lead          "0..*" -down->  "0..1" Oportunidad          : se convierte en
+Cliente       "1"    -down->  "0..*" Oportunidad          : tiene
+Oportunidad   "1"    -down->  "0..*" Propuesta            : genera
+Propuesta     "1"    -down->  "1..*" ItemPropuesta        : compone
+ItemPropuesta "0..*" -down->  "1"    TipoServicio         : es de tipo
+TipoServicio  "1"    -down->  "1"    FormularioCotizacion : usa
+
+' ── relaciones laterales ──
+Lead          "0..*" -right-> "0..1" Cliente              : puede ser de
+Oportunidad   "0..*" -right-> "1"    ResponsableComercial : gestiona
+Oportunidad   "1"    -left->  "0..*" HistorialNegociacion : registra
+Propuesta     "1"    -right-> "0..1" ServicioContratado   : formaliza
+ItemPropuesta "0..*" -right-> "1"    Residuo              : aplica a
+TipoServicio  "1"    -right-> "0..*" ReglaCotizacion      : aplica
+
+' ── actores sobre entidades de configuración ──
+ResponsableComercial  "1" -down->  "0..*" ServicioContratado   : tramita traspaso
+ConfiguradorComercial "1" -right-> "0..*" FormularioCotizacion : configura
+ConfiguradorComercial "1" -right-> "0..*" ReglaCotizacion      : define
+
+@enduml

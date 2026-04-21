@@ -1,0 +1,127 @@
+@startuml
+top to bottom direction
+hide methods
+
+skinparam nodesep 130
+skinparam ranksep 100
+
+skinparam class {
+  BackgroundColor white
+  BorderColor black
+  ArrowColor black
+}
+
+class Lead {
+  idLead
+  canalOrigen
+  estado
+}
+
+class Cliente {
+  idCliente
+  nombre
+  telefono
+  email
+  tipoCliente
+}
+
+class Oportunidad {
+  idOportunidad
+  estado
+  prioridad
+  motivoPerdida
+}
+
+class ResponsableComercial {
+  idResponsable
+  nombre
+}
+
+class HistorialNegociacion {
+  idHistorial
+  fechaHora
+  tipo
+  descripcion
+  resultado
+}
+
+class Propuesta {
+  idPropuesta
+  version
+  estado
+  importeTotal
+}
+
+class ServicioContratado {
+  idServicioContratado
+  estado
+  fechaTraspaso
+}
+
+class ItemPropuesta {
+  idItem
+  cantidad
+  unidadCobro
+  frecuencia
+  precioFinal
+}
+
+class TipoServicio {
+  idTipoServicio
+  nombre
+  modalidad
+}
+
+class Residuo {
+  idResiduo
+  nombre
+  categoria
+}
+
+class FormularioCotizacion {
+  idFormulario
+  nombre
+  version
+}
+
+class ReglaCotizacion {
+  idRegla
+  descripcion
+  criterio
+}
+
+' ===== FILAS VISUALES =====
+Cliente -[hidden]right- Oportunidad
+Oportunidad -[hidden]right- ResponsableComercial
+
+Lead -[hidden]down- Oportunidad
+HistorialNegociacion -[hidden]right- Propuesta
+
+Oportunidad -[hidden]down- Propuesta
+Propuesta -[hidden]down- ItemPropuesta
+
+TipoServicio -[hidden]right- Residuo
+ItemPropuesta -[hidden]down- TipoServicio
+
+FormularioCotizacion -[hidden]right- ReglaCotizacion
+TipoServicio -[hidden]down- FormularioCotizacion
+
+' ===== RELACIONES =====
+Lead "1" -down-> "0..1" Oportunidad : se convierte en
+
+Cliente "1" -right-> "0..*" Oportunidad : tiene
+ResponsableComercial "1" -left-> "0..*" Oportunidad : gestiona
+
+Oportunidad "1" -left-> "0..*" HistorialNegociacion : registra
+Oportunidad "1" -down-> "0..*" Propuesta : genera
+
+Propuesta "1" -right-> "0..1" ServicioContratado : formaliza
+
+Propuesta "1" *-down- "1..*" ItemPropuesta : compone
+ItemPropuesta "*" -down-> "1" TipoServicio : define
+ItemPropuesta "*" -right-> "1" Residuo : aplica a
+
+TipoServicio "1" -down-> "1..*" FormularioCotizacion : usa
+TipoServicio "1" -right-> "0..*" ReglaCotizacion : usa
+
+@enduml

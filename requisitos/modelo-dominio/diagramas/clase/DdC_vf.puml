@@ -1,0 +1,127 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+skinparam nodesep 90
+skinparam ranksep 60
+
+class Lead {
+  id
+  origen
+  canalEntrada
+  nombreContacto
+  telefonoContacto
+  nombreEmpresa
+  descripcionInicial
+}
+
+class Cliente {
+  id
+  nombre
+  documentoFiscal
+  telefonoContacto
+  emailContacto
+  direccion
+}
+
+class Oportunidad {
+  id
+  estado
+  prioridad
+  descripcionSolicitud
+  resultado
+  tipoContrato
+  motivoPerdida
+  fechaCreacion
+}
+
+class HistorialSeguimiento {
+  id
+  fecha
+  tipo
+  comentario
+  fechaProximoContacto
+}
+
+class SolicitudServicio {
+  id
+  observaciones
+  requiereFDS
+  requiereContenedor
+  requiereManoObra
+  requierePesaje
+  accesoVehiculo
+}
+
+class ItemSolicitud {
+  id
+  cantidadEstimada
+  volumenEstimado
+  acondicionamiento
+  descripcionDetallada
+}
+
+class Residuo {
+  id
+  codigoInterno
+  grupo
+  nombre
+  nombreCompuesto
+  codigoIbama
+  clase
+  destinoFinal
+  tecnologiaAplicada
+  activo
+}
+
+class Propuesta {
+  id
+  fechaEmision
+  fechaEnvio
+  tipoPropuesta
+  version
+  estadoPropuesta
+  validez
+  documentoPDF
+}
+
+class ItemPropuesta {
+  id
+  cantidad
+  unidad
+  precioUnitario
+  subtotal
+  franquia
+  excedente
+  observaciones
+}
+
+class OrdenServicio {
+  id
+  fechaGeneracion
+  fechaInicioServicio
+  datosLogisticos
+  datosFinancieros
+  datosSILC
+  observaciones
+}
+
+' Relaciones principales
+Lead "0..*" --> "0..1" Cliente : se asocia a
+Lead "0..1" --> "0..*" Oportunidad : origina
+Cliente "1" --> "0..*" Oportunidad
+
+Oportunidad "1" -left- "0..*" HistorialSeguimiento
+Oportunidad "1" -down- "0..1" SolicitudServicio
+Oportunidad "1" -- "0..*" Propuesta
+Oportunidad "1" -right- "0..1" OrdenServicio : genera si ganada
+
+' Diagnóstico
+SolicitudServicio "1" -- "1..*" ItemSolicitud
+ItemSolicitud "* " --> "1" Residuo
+
+' Propuesta
+Propuesta "1" -- "1..*" ItemPropuesta
+ItemPropuesta "* " -left-> "1" ItemSolicitud
+
+@enduml

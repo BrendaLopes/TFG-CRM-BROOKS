@@ -1,0 +1,112 @@
+@startuml CRM_Brooks_DomainModel
+skinparam classAttributeIconSize 0
+skinparam nodesep 110
+skinparam ranksep 50
+hide circle
+
+class Lead {
+  idLead
+  nombreContacto
+  empresa
+  canalOrigen
+  estado
+}
+
+class Cliente {
+  idCliente
+  nombre
+  telefono
+  email
+  tipoCliente
+}
+
+class Oportunidad {
+  idOportunidad
+  estado
+  prioridad
+  motivoDescarte
+  motivoPerdida
+  fechaCreacion
+}
+
+class ResponsableComercial {
+  idResponsable
+  nombre
+  email
+}
+
+class HistorialNegociacion {
+  idHistorial
+  fechaHora
+  tipo
+  descripcion
+  resultado
+}
+
+class Propuesta {
+  idPropuesta
+  version
+  estado
+  importeTotal
+  fechaCreacion
+  fechaEnvio
+}
+
+class ServicioContratado {
+  idServicioContratado
+  estado
+  fechaTraspaso
+  notasOperacion
+}
+
+class ItemPropuesta {
+  idItem
+  cantidad
+  unidadCobro
+  frecuencia
+  precioSugerido
+  precioFinal
+}
+
+class TipoServicio {
+  idTipoServicio
+  nombre
+  modalidad
+  descripcion
+}
+
+class Residuo {
+  idResiduo
+  nombre
+  categoria
+}
+
+class FormularioCotizacion {
+  idFormulario
+  nombre
+  version
+}
+
+class ReglaCotizacion {
+  idRegla
+  descripcion
+  criterio : expresión lógica
+}
+
+' ── flujo principal top-down ──
+Lead          "0..*" -down->  "0..1" Oportunidad          : se convierte en
+Cliente       "1"    -down->  "0..*" Oportunidad          : tiene
+Oportunidad   "1"    -down->  "0..*" Propuesta            : genera
+Propuesta     "1"    -down->  "1..*" ItemPropuesta        : compone
+ItemPropuesta "0..*" -down->  "1"    TipoServicio         : es de tipo
+TipoServicio  "1"    -down->  "1"    FormularioCotizacion : usa
+
+' ── relaciones laterales ──
+Lead          "0..*" -right-> "0..1" Cliente              : puede ser de
+Oportunidad   "0..*" -right-> "1"    ResponsableComercial : gestiona
+Oportunidad   "1"    -left->  "0..*" HistorialNegociacion : registra
+Propuesta     "1"    -right-> "0..1" ServicioContratado   : formaliza
+ItemPropuesta "0..*" -right-> "1"    Residuo              : aplica a
+TipoServicio  "1"    -right-> "0..*" ReglaCotizacion      : aplica
+
+@enduml
