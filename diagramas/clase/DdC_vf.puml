@@ -1,0 +1,164 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam nodesep 100
+skinparam ranksep 100
+hide circle
+
+class Usuario {
+  id
+  nombre
+  email
+  rol 
+  activo
+}
+
+class Lead {
+  id
+  origen
+  canalEntrada
+  nombreEmpresa
+  descripcionInicial
+  fechaCreacion
+}
+
+class Cliente {
+  id
+  nombre
+  documentoFiscal
+  segmento
+  direccion
+}
+
+class Contacto {
+  id
+  nombre
+  cargo
+  telefono
+  email
+}
+
+class Oportunidad {
+  id
+  estado 
+  prioridad
+  tipoContrato
+  motivoPerdida
+  fechaCreacion
+  fechaCierre
+}
+
+class HistorialSeguimiento {
+  id
+  fecha
+  tipo
+  comentario
+}
+
+class OrdenServicio {
+  id
+  fechaGeneracion
+  tipoServicio
+  frecuenciaServicio
+  direccionServicio
+  condicionPago
+  observaciones
+}
+
+class Propuesta {
+  id
+  fechaEmision
+  fechaEnvio
+  version
+  estado
+}
+
+class SolicitudServicio {
+id
+tipoServicio
+frecuenciaServicio
+direccionServicio
+restriccionesHorario
+observaciones
+requiereFichaSeguridad
+accesoVehiculo
+}
+
+class Cotizacion {
+  id
+  fechaGeneracion
+  estado
+  distanciaCalculada
+  tiempoEstimadoServicio
+  totalSugerido
+  totalFinal
+  observaciones
+}
+class ItemCotizacion {
+  id
+  descripcion
+  cantidad
+  unidad
+  precioSugerido
+  precioFinal
+  subtotal
+  franquicia
+  ajusteManual
+  justificacionAjuste
+}
+class ItemServicioSolicitado {
+  id
+  cantidadEstimada
+  unidadMedida
+  acondicionamiento
+  descripcionDetallada
+}
+
+class Residuo {
+  id
+  codigoInterno
+  grupo
+  nombre
+  codigoIbama
+  clase 
+  activo
+}
+
+class TarifaBase {
+  id
+  categoria
+  destinoFinal
+  unidadMedida
+  precioUnitario
+  franquiciaMinima
+  precioExcedente
+  vigencia
+}
+'======= RELACIONES PIPELINE ==========
+Usuario "1"    -right-> "0..*" Lead         : registra
+Lead    "0..*" -right-> "0..1" Cliente   : se vincula a
+Cliente "1"    -right-> "1..*" Contacto : tiene
+
+Lead    "1"    -down->  "0..*" Oportunidad : origina
+Cliente "1"    -down->  "0..*" Oportunidad : asociada a 
+Usuario "1"    -down->  "0..*" Oportunidad : gestiona
+
+Oportunidad "1" -left->  "0..*" HistorialSeguimiento
+Oportunidad "1" -right- "0..1" OrdenServicio : genera si ganada
+
+'======= RELACIONES COTIZACION ==========
+Oportunidad "1" -down-> "0..*"           Propuesta
+Oportunidad "1" -down-> "0..1"           SolicitudServicio
+Propuesta -[hidden]left-                 SolicitudServicio
+
+SolicitudServicio  "1"    -down-   "1..*" ItemServicioSolicitado
+
+Cotizacion         "1"    .right.>  "0..1" Propuesta : sustenta
+SolicitudServicio "1" -right-> "0..*" Cotizacion : origina
+
+Cotizacion "1" -down- "1..*"             ItemCotizacion
+
+ItemCotizacion "0..*" .left.> "0..1" ItemServicioSolicitado : referencia
+ItemCotizacion "0..*" .down.> "0..1" TarifaBase : usa tarifa
+ItemServicioSolicitado  "0..*"  -down->   "1"      Residuo
+Residuo        "1"    -right->  "0..*"    TarifaBase
