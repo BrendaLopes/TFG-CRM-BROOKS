@@ -1,0 +1,37 @@
+@startuml
+title Estado de la Oportunidad
+
+[*] --> LEAD : registro
+
+LEAD --> NO_VIABLE : descartar en evaluación inicial
+LEAD --> CUALIFICADA : cualificar lead
+
+CUALIFICADA --> EN_ENTREVISTA_TECNICA : contactar cliente
+EN_ENTREVISTA_TECNICA --> NO_VIABLE : servicio no viable
+EN_ENTREVISTA_TECNICA --> PROPUESTA_EN_ELABORACION : iniciar cotización
+
+PROPUESTA_EN_ELABORACION --> PROPUESTA_ENVIADA : enviar propuesta
+
+PROPUESTA_ENVIADA --> EN_NEGOCIACION : solicitar cambios
+PROPUESTA_ENVIADA --> GANADA : aceptar
+PROPUESTA_ENVIADA --> PERDIDA : rechazar
+
+EN_NEGOCIACION --> PROPUESTA_ENVIADA : nueva versión
+EN_NEGOCIACION --> GANADA : acuerdo
+EN_NEGOCIACION --> PERDIDA : sin acuerdo
+
+GANADA --> [*] : generar orden de servicio
+PERDIDA --> [*] : registrar motivo
+NO_VIABLE --> [*] : registrar motivo
+
+LEAD : Contacto registrado
+CUALIFICADA : Lead con interés comercial
+EN_ENTREVISTA_TECNICA : Recogida de datos del servicio
+PROPUESTA_EN_ELABORACION : Cotización y propuesta en curso
+PROPUESTA_ENVIADA : Propuesta enviada
+EN_NEGOCIACION : Iteración con el cliente
+GANADA : Contrato cerrado
+PERDIDA : Oportunidad perdida
+NO_VIABLE : Servicio no viable
+
+@enduml
