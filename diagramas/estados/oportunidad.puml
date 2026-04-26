@@ -6,9 +6,9 @@ title Estado de la Oportunidad
 LEAD --> NO_VIABLE : descartar en evaluación inicial
 LEAD --> CUALIFICADA : cualificar lead
 
-CUALIFICADA --> EN_ENTREVISTA_TECNICA : contactar cliente
-EN_ENTREVISTA_TECNICA --> NO_VIABLE : servicio no viable
-EN_ENTREVISTA_TECNICA --> PROPUESTA_EN_ELABORACION : iniciar cotización
+CUALIFICADA --> EN_RECOGIDA_DE_DATOS : recoger datos
+EN_RECOGIDA_DE_DATOS --> NO_VIABLE : servicio no viable
+EN_RECOGIDA_DE_DATOS --> PROPUESTA_EN_ELABORACION : iniciar cotización
 
 PROPUESTA_EN_ELABORACION --> PROPUESTA_ENVIADA : enviar propuesta
 
@@ -26,7 +26,7 @@ NO_VIABLE --> [*] : registrar motivo
 
 LEAD : Contacto registrado
 CUALIFICADA : Lead con interés comercial
-EN_ENTREVISTA_TECNICA : Recogida de datos del servicio
+EN_RECOGIDA_DE_DATOS : Recogida de datos del servicio
 PROPUESTA_EN_ELABORACION : Cotización y propuesta en curso
 PROPUESTA_ENVIADA : Propuesta enviada
 EN_NEGOCIACION : Iteración con el cliente
