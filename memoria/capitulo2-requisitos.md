@@ -76,7 +76,7 @@ Además del diagrama de clases, se modelan los estados de las dos entidades cuyo
 
 ### Estado de la oportunidad
 
-Una oportunidad puede descartarse como no viable en dos momentos distintos: antes de contactar con el cliente, si en la evaluación inicial ya se determina que no tiene sentido avanzar, o después de la entrevista técnica, si el comercial concluye que el servicio no puede ejecutarse. Si avanza, pasa por la elaboración y envío de la propuesta, pudiendo entrar en negociación antes de cerrarse como ganada o perdida.
+Una oportunidad puede descartarse como no viable en dos momentos distintos: antes de contactar con el cliente, si en la evaluación inicial ya se determina que no tiene sentido avanzar, o durante la fase de recogida de datos, si el comercial concluye que el servicio no puede ejecutarse. Si avanza, pasa por la elaboración y envío de la propuesta, pudiendo entrar en negociación antes de cerrarse como ganada o perdida.
 
 ![Estado de la oportunidad](../diagramas/img/estados_oportunidad.png)
 *Figura X — Diagrama de estados de la oportunidad*
@@ -97,7 +97,7 @@ Las entidades del modelo se organizan en tres grupos según su función dentro d
 | Entidad | Definición |
 |---|---|
 | **Usuario** | Persona con acceso al sistema. Su rol determina qué puede hacer: registrar leads, gestionar oportunidades o configurar el sistema. |
-| **Lead** | Registro inicial de un contacto con potencial comercial. Puede venir de una llamada, WhatsApp, web o prospección activa. No todo lead acaba siendo una oportunidad. |
+| **Lead** | Registro inicial de un contacto con potencial comercial. Puede venir de una llamada, WhatsApp, web o por iniciativa del equipo comercial. No todo lead acaba siendo una oportunidad. |
 | **Cliente** | Empresa o persona con la que Brooks tiene o ha tenido relación comercial. Un lead puede vincularse a un cliente existente o dar origen a uno nuevo. |
 | **Contacto** | Persona física asociada a un cliente. Un cliente puede tener varios contactos. |
 | **Oportunidad** | Lead que ha pasado la evaluación inicial y entra en el pipeline comercial. Recoge el tipo de contrato, la prioridad y, si se pierde, el motivo. |
@@ -126,7 +126,7 @@ Las entidades del modelo se organizan en tres grupos según su función dentro d
 Los requisitos de usuario recogen las necesidades y expectativas de los distintos usuarios respecto al sistema, identificadas a partir del análisis del proceso comercial y de las limitaciones del proceso actual.
 
 | ID | Título | Descripción | Prioridad |
-|---|---|---|---|---|
+|---|---|---|---|
 | RU-01 | Registro de lead | El usuario debe poder registrar nuevos leads con sus datos básicos y canal de origen. | Alta |
 | RU-02 | Actualización de lead | El usuario debe poder visualizar y actualizar los datos de un lead existente. | Alta |
 | RU-03 | Gestión del pipeline | El usuario debe poder gestionar oportunidades a lo largo de su ciclo de vida mediante un pipeline visual. | Alta |
@@ -151,7 +151,7 @@ Los requisitos funcionales describen el comportamiento específico que debe ofre
 | RF-03 | Pipeline de oportunidades | El sistema debe permitir avanzar una oportunidad por los estados definidos: Lead, Cualificada, Propuesta en elaboración, Propuesta enviada, En negociación, Ganada, Perdida y No viable. | RU-03 | Alta |
 | RF-04 | Formulario de recogida de datos | El sistema debe permitir registrar los datos técnicos del servicio: tipo de servicio, frecuencia, dirección, tipo de residuo, cantidad, acondicionamiento, condiciones de acceso y requisitos especiales. | RU-04 | Alta |
 | RF-05 | Distancia del servicio | El sistema debe calcular o registrar la distancia asociada al servicio a partir de la dirección de recogida, pudiendo apoyarse en un servicio externo de mapas. | RU-05 | Alta |
-| RF-06 | Precio sugerido | El sistema debe calcular precios sugeridos por ítem utilizando tarifas base y variables asociadas al servicio, como residuo, destino final, unidad de medida y conceptos logísticos. | RU-05 | Alta |
+| RF-06 | Precio sugerido | El sistema debe calcular precios sugeridos por ítem utilizando tarifas base y variables asociadas al servicio, como residuo, destino final, unidad de medida y factores logísticos. | RU-05 | Alta |
 | RF-07 | Pre-relleno de datos | El sistema debe reutilizar los datos recogidos durante la fase de recogida de información para completar la cotización cuando sea posible. | RU-05 | Alta |
 | RF-08 | Ajuste manual de precio | El sistema debe permitir al comercial ajustar el precio sugerido de cualquier ítem, registrando el precio sugerido, el precio final y la justificación del ajuste. | RU-06 | Alta |
 | RF-09 | Generación de propuesta | El sistema debe generar una propuesta comercial a partir de los datos de la cotización. | RU-07 | Alta |
@@ -159,7 +159,7 @@ Los requisitos funcionales describen el comportamiento específico que debe ofre
 | RF-11 | Registro de interacciones | El sistema debe permitir registrar interacciones con el cliente indicando tipo, fecha y comentario. | RU-08 | Alta |
 | RF-12 | Cierre de oportunidad | El sistema debe permitir cerrar una oportunidad como ganada, perdida o no viable, registrando el motivo en los dos últimos casos. | RU-09 | Alta |
 | RF-13 | Generación de orden de servicio | El sistema debe permitir generar una Orden de Servicio al cerrar una oportunidad como ganada, consolidando los datos técnicos y comerciales. | RU-10 | Alta |
-| RF-14 | Exportación de orden de servicio | El sistema debe permitir exportar la Orden de Servicio en un formato consultable por el área operativa. | RU-10 | Alta |
+| RF-14 | Exportación de orden de servicio | El sistema debe permitir exportar la Orden de Servicio en formato PDF por el área operativa. | RU-10 | Alta |
 | RF-15 | Autenticación y roles | El sistema debe requerir autenticación para acceder y aplicar los permisos correspondientes al rol del usuario. | RU-01 a RU-12 | Alta |
 | RF-16 | Gestión de tarifas | El sistema debe permitir al Administrador añadir, editar y desactivar tarifas base por residuo, destino final y unidad de medida. | RU-11 | Alta |
 | RF-17 | Configuración del formulario | El sistema debe permitir al Administrador configurar campos del formulario sin intervención técnica. | RU-12 | Media |

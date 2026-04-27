@@ -1,0 +1,48 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam nodesep 100
+skinparam ranksep 100
+hide circle
+hide members
+
+class Usuario
+class Lead
+class Cliente
+class Contacto
+class Oportunidad
+class HistorialSeguimiento
+class OrdenServicio
+class Propuesta
+class SolicitudServicio
+class Cotizacion
+class ItemCotizacion
+class ItemServicioSolicitado
+class Residuo
+class TarifaBase
+
+Usuario -right-> Lead : registra
+Lead -right-> Cliente : se vincula a
+Cliente -right-> Contacto : tiene
+
+Lead -down-> Oportunidad : origina
+Cliente -down-> Oportunidad : asociada a
+Usuario -down-> Oportunidad : gestiona
+
+Oportunidad -left-> HistorialSeguimiento
+Oportunidad -right-> OrdenServicio : genera si ganada
+
+Oportunidad -down-> Propuesta
+Oportunidad -down-> SolicitudServicio
+Propuesta -[hidden]left- SolicitudServicio
+
+SolicitudServicio -down- ItemServicioSolicitado
+Cotizacion .right.> Propuesta : sustenta
+SolicitudServicio -right-> Cotizacion : origina
+Cotizacion -down- ItemCotizacion
+
+ItemCotizacion .left.> ItemServicioSolicitado : referencia
+ItemCotizacion .down.> TarifaBase : usa tarifa
+ItemServicioSolicitado -down-> Residuo
+Residuo -right-> TarifaBase
+@enduml
