@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam actorStyle none
+
+|Usuario|
+start
+:Accede al formulario de nuevo lead;
+:Introduce datos del contacto\n(nombre, empresa, canal de entrada);
+
+|Sistema|
+:Verifica si el contacto ya existe;
+
+if (¿Contacto duplicado?) then (sí)
+  :Alerta al usuario\nde posible duplicado;
+  |Usuario|
+  if (¿Continuar de todas formas?) then (sí)
+    :Confirma el registro;
+  else (no)
+    :Descarta el formulario;
+    stop
+  endif
+else (no)
+endif
+
+|Sistema|
+:Crea el lead con estado inicial;
+:Asocia el lead al usuario que lo registra;
+
+|Usuario|
+:Lead registrado y disponible\npara evaluación;
+stop
+@enduml

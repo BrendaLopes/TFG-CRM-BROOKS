@@ -1,0 +1,42 @@
+@startuml
+skinparam shadowing false
+skinparam actorStyle awesome
+left to right direction
+
+actor "Usuario de captación" as Captacion
+actor "Comercial" as Comercial
+actor "Administrador" as Admin
+
+Administrador --|> Comercial
+Administrador --|> Captacion
+
+rectangle "Sistema CRM — Brooks Ambiental" {
+  usecase "CU-01 Registrar lead" as CU01
+  usecase "CU-02 Actualizar lead" as CU02
+  usecase "CU-03 Gestionar oportunidad" as CU03
+  usecase "CU-04 Recoger datos del servicio" as CU04
+  usecase "CU-05 Generar cotización" as CU05
+  usecase "CU-06 Ajustar precios" as CU06
+  usecase "CU-07 Generar propuesta" as CU07
+  usecase "CU-08 Registrar interacciones" as CU08
+  usecase "CU-09 Cerrar oportunidad" as CU09
+  usecase "CU-10 Generar orden de servicio" as CU10
+  usecase "CU-11 Gestionar tarifas base" as CU11
+  usecase "CU-12 Configurar formulario" as CU12
+}
+
+Captacion --> CU01
+Captacion --> CU02
+Comercial --> CU01
+Comercial --> CU02
+Comercial --> CU03
+Comercial --> CU04
+Comercial --> CU05
+Comercial --> CU06
+Comercial --> CU07
+Comercial --> CU08
+Comercial --> CU09
+Comercial --> CU10
+Admin --> CU11
+Admin --> CU12
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+skinparam shadowing false
+
+|Comercial|
+start
+:Accede a la cotización\nfinalizada;
+:Solicita generar propuesta;
+
+|Sistema|
+:Crea la propuesta en estado Borrador\na partir de los datos de la cotización;
+:Asigna número de propuesta\nen formato PB[NNNN]/[AA];
+:Registra versión inicial (v1);
+
+|Comercial|
+:Revisa el borrador de la propuesta;
+
+if (¿La propuesta está lista\npara enviar?) then (no)
+  :Realiza ajustes en el borrador;
+
+else (si)
+   :Marca la propuesta\n como enviada;
+  |Sistema|
+  :Actualiza estado de la propuesta\na Enviada;
+  :Actualiza estado de la oportunidad\na Propuesta enviada;
+  |Comercial|
+  :Registra la interacción\nde envío al cliente;
+endif
+
+|Sistema|
+:Queda a la espera de la\nrespuesta del cliente;
+
+|Comercial|
+if (¿El cliente solicita cambios?) then (sí)
+  :Registra los cambios solicitados\nen el historial;
+  |Sistema|
+  :Crea nueva versión de la propuesta\n(v2, v3...);
+  :Mantiene historial de\nversiones anteriores;
+  |Comercial|
+  :Vuelve a revisar\nel nuevo borrador;
+else (no)
+endif
+
+stop
+@enduml

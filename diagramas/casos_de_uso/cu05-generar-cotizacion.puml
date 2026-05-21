@@ -1,0 +1,43 @@
+@startuml
+skinparam shadowing false
+
+|Comercial|
+start
+:Accede a la oportunidad\nen estado cualificada;
+:Inicia la cotización\na partir de la solicitud de servicio;
+
+|Sistema|
+:Recupera los ítems de la\nsolicitud de servicio;
+:Para cada ítem, busca la tarifa base\n(residuo + destino final + unidad);
+
+if (¿Tarifa base encontrada?) then (no)
+  :Marca el ítem como\npendiente de precio manual;
+else (sí)
+  :Calcula precio sugerido\n(valorTransporte + valorDestinoFinal × cantidad);
+  if (¿Cantidad supera franquicia?) then (sí)
+    :Añade valorExcedente\nal cálculo;
+  endif
+endif
+
+:Genera borrador de cotización\ncon totales sugeridos;
+
+|Comercial|
+:Revisa los precios sugeridos;
+
+if (¿Ajusta algún precio?) then (sí)
+  :Modifica el precio del ítem;
+  :Registra justificación del ajuste;
+  |Sistema|
+  :Actualiza el subtotal\ny el total final;
+  |Comercial|
+else (no)
+endif
+
+|Sistema|
+:Guarda la cotización con\ntotal sugerido y total final;
+:Actualiza el estado de la\noportunidad a Propuesta en elaboración;
+
+|Comercial|
+:Cotización lista para\ngenerar propuesta;
+stop
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+
+|Comercial|
+start
+:Accede a la oportunidad en curso;
+:Selecciona cerrar oportunidad\ne indica el resultado;
+
+if (¿Resultado?) then (Ganada)
+  |Sistema|
+  :Actualiza estado a Ganada;
+  :Genera orden de servicio\ncon datos técnicos y comerciales;
+  |Comercial|
+  if (¿La orden es correcta?) then (sí)
+    |Sistema|
+    :Marca la orden como lista\npara operaciones;
+  else (no)
+    |Comercial|
+    :Corrige los datos de la orden;
+    |Sistema|
+    :Actualiza la orden;
+  endif
+elseif (¿Resultado?) then (Perdida)
+  |Comercial|
+  :Registra el motivo de pérdida;
+  |Sistema|
+  :Actualiza estado a Perdida;
+  :Registra motivo en el historial;
+else (No viable)
+  |Comercial|
+  :Registra el motivo de descarte;
+  |Sistema|
+  :Actualiza estado a No viable;
+  :Registra motivo en el historial;
+endif
+
+:Oportunidad cerrada.\nPipeline actualizado;
+stop
+@enduml

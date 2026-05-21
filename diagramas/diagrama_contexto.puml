@@ -1,0 +1,23 @@
+@startuml
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam nodesep 60
+skinparam ranksep 80
+
+left to right direction
+
+actor "Usuario de captación" as Captacion
+actor "Comercial" as Comercial
+actor "Administrador" as Admin
+actor "Cliente" as Cliente
+actor "Operaciones" as Operaciones
+
+rectangle "Sistema CRM\nBrooks Ambiental" as Sistema {
+}
+
+Captacion --> Sistema : Registra leads
+Comercial --> Sistema : Gestiona oportunidades\nCotizaciones y propuestas\nHistorial de negociación
+Admin --> Sistema : Configura tarifas\ny parámetros
+Sistema --> Cliente : Propuesta comercial
+Sistema --> Operaciones : Orden de servicio
+@enduml
