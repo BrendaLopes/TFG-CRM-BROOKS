@@ -7,8 +7,8 @@ actor "Usuario de captación" as Captacion
 actor "Comercial" as Comercial
 actor "Administrador" as Admin
 
-Administrador --|> Comercial
-Administrador --|> Captacion
+Admin --|> Comercial
+Admin --|> Captacion
 
 rectangle "Sistema CRM — Brooks Ambiental" {
   usecase "CU-01 Registrar lead" as CU01
