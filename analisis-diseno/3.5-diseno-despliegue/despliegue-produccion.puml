@@ -1,0 +1,37 @@
+@startuml
+title Diagrama de despliegue — Entorno de producción
+
+skinparam shadowing false
+skinparam defaultFontSize 11
+skinparam nodeBackgroundColor #FAFAFA
+skinparam nodeBorderColor #444444
+skinparam databaseBackgroundColor #fff2cc
+skinparam databaseBorderColor #444444
+skinparam arrowColor #444444
+
+node "Dispositivo del usuario" {
+  node "Navegador web" as Browser
+}
+
+node "Vercel Cloud Platform\n(Hosting frontend)" as Vercel {
+  component "React SPA\nTypeScript" as Frontend
+}
+
+node "Railway Cloud Platform" as Railway {
+  node "Servidor backend\nNode.js + Express" as BackendNode {
+    component "API REST" as API
+    component "Prisma ORM" as Prisma
+  }
+
+  database "PostgreSQL\nRailway DB" as DB
+}
+
+cloud "SILC API REST\n«sistema externo futuro»" as SILC
+
+Browser --> Frontend : HTTPS
+Frontend --> API : HTTP/JSON + JWT
+API --> Prisma : acceso a datos
+Prisma --> DB : consultas SQL
+API --> SILC : HTTP/JSON + JWT/API Key\n«integración futura»
+
+@enduml
