@@ -1,0 +1,58 @@
+@startuml
+title Capa de negocio — Backend Node.js + Express
+top to bottom direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontSize 11
+skinparam arrowColor #444444
+skinparam componentBorderColor #444444
+skinparam componentBackgroundColor white
+
+skinparam rectangle {
+  BorderColor #444444
+}
+
+rectangle "Capa de entrada HTTP" #dae8fc {
+  component "Routes\n/endpoints REST" as Routes
+  component "Middleware\nJWT + validaciones" as Middleware
+  Routes -down-> Middleware : petición HTTP
+}
+
+rectangle "Capa de aplicación" #d5e8d4 {
+  component "Controllers\ncoordinan casos de uso" as Controllers
+}
+
+rectangle "Capa de negocio" #d5e8d4 {
+  component "CotizacionService" as CS
+  component "OportunidadService" as OS
+  component "OrdenServicioService" as OSS
+  component "PdfService" as PDF
+  component "SilcIntegrationService" as SILCS
+  CS -[hidden]right- OS
+  OS -[hidden]right- OSS
+  OSS -[hidden]right- PDF
+  PDF -[hidden]right- SILCS
+}
+
+rectangle "Capa de persistencia" #dae8fc {
+  component "Repositories" as REP
+  component "Prisma ORM" as Prisma
+  REP -down-> Prisma
+}
+
+database "PostgreSQL" as DB
+cloud "SILC API REST\n(futuro)" as SILC
+
+Middleware -down-> Controllers : petición autenticada
+Controllers -down-> CS : delega lógica
+Controllers -down-> OS : delega lógica
+Controllers -down-> OSS : delega lógica
+CS -down-> REP : accede datos
+OS -down-> REP : accede datos
+OSS -down-> REP : accede datos
+OSS -right-> PDF : genera PDF
+OSS -right-> SILCS : prepara payload
+Prisma -down-> DB : consultas SQL
+SILCS -right-> SILC : HTTP/JSON + JWT/API Key
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+title Diagrama de despliegue — Entorno de desarrollo
+
+skinparam shadowing false
+skinparam defaultFontSize 11
+
+node "Máquina del desarrollador" {
+
+  node "Navegador web" as Browser
+
+  node "Servidor de desarrollo frontend\nVite — localhost:5173" as Vite {
+    component "React SPA\nTypeScript" as Frontend
+  }
+
+  node "Servidor local backend\nNode.js + Express\nlocalhost:3000" as Backend {
+    component "API REST" as API
+    component "Prisma ORM" as Prisma
+  }
+
+  database "PostgreSQL local\nlocalhost:5432" as DB
+}
+
+Browser --> Vite : Solicitud de la SPA
+Vite --> API : HTTP/JSON + JWT\nlocalhost
+API --> Prisma : acceso a datos
+Prisma --> DB : consultas SQL
+
+@enduml

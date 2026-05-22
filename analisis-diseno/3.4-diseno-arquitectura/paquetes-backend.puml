@@ -1,0 +1,40 @@
+
+
+
+
+@startuml
+title Estructura de paquetes — Backend Node.js + Express
+top to bottom direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam PackageBorderColor #444444
+skinparam PackageBackgroundColor #d5e8d4
+skinparam defaultFontSize 12
+skinparam arrowColor #444444
+
+package "routes" as R
+package "middleware" as MW
+package "controllers" as C
+package "services" as S
+package "repositories" as REP
+package "models" as M
+package "dtos" as D
+package "pdf" as PDF
+package "integrations" as INT
+package "utils" as U
+package "config" as CFG
+
+R -down-> MW : pasa por
+MW -down-> C : valida / autoriza
+C -down-> S : delega lógica
+C -down-> D : request/response
+S -down-> REP : accede datos
+S -down-> D : transforma datos
+S -down-> PDF : genera documentos
+S -down-> INT : futura integración SILC
+S -down-> U : funciones auxiliares
+REP -down-> M : consulta entidades
+PDF -down-> D : datos OS / propuesta
+MW -right-> CFG : config JWT
+
+@enduml
