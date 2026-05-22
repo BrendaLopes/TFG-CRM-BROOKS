@@ -1,11 +1,10 @@
 @startuml
 title DER — Proceso de cotización
 
-skinparam shadowing false
 skinparam classAttributeIconSize 0
-skinparam defaultFontSize 10
-skinparam ranksep 45
-skinparam nodesep 30
+skinparam shadowing false
+skinparam nodesep 100
+skinparam ranksep 100
 
 skinparam class {
   BackgroundColor #F3F7FD
@@ -16,8 +15,8 @@ entity SolicitudServicio {
   * id : UUID <<PK>>
   --
   * oportunidadId : UUID <<FK>>
-  tipoServicio : VARCHAR(100)
-  frecuenciaServicio : VARCHAR(50)
+  tipoServicio : VARCHAR
+  frecuenciaServicio : VARCHAR
   direccionServicio : TEXT
   restriccionesHorario : TEXT
   observaciones : TEXT
@@ -30,7 +29,7 @@ entity Cotizacion {
   --
   * solicitudId : UUID <<FK>>
   fechaGeneracion : TIMESTAMP
-  estado : ENUM(borrador, finalizada)
+  estado : ENUM
   distanciaCalculada : DECIMAL
   tiempoEstimadoServicio : INTEGER
   totalSugerido : DECIMAL
@@ -44,9 +43,9 @@ entity ItemCotizacion {
   * cotizacionId : UUID <<FK>>
   tarifaBaseId : UUID <<FK>>
   itemServicioId : UUID <<FK>>
-  descripcion : VARCHAR(200)
+  descripcion : VARCHAR
   cantidad : DECIMAL
-  unidad : VARCHAR(20)
+  unidad : VARCHAR
   precioSugerido : DECIMAL
   precioFinal : DECIMAL
   subtotal : DECIMAL
@@ -61,19 +60,19 @@ entity ItemServicioSolicitado {
   * solicitudId : UUID <<FK>>
   * residuoId : UUID <<FK>>
   cantidadEstimada : DECIMAL
-  unidadMedida : ENUM(kg, m3, unidad, contenedor)
-  acondicionamiento : VARCHAR(100)
+  unidadMedida : ENUM
+  acondicionamiento : VARCHAR
   descripcionDetallada : TEXT
 }
 
 entity Residuo {
   * id : UUID <<PK>>
   --
-  codigoInterno : VARCHAR(50)
-  nombre : VARCHAR(150)
-  grupo : VARCHAR(100)
-  codigoIbama : VARCHAR(20)
-  clase : ENUM(I, IIA, IIB)
+  codigoInterno : VARCHAR
+  grupo : VARCHAR
+  nombre : VARCHAR
+  codigoIbama : VARCHAR
+  clase : ENUM
   activo : BOOLEAN
 }
 
@@ -81,9 +80,9 @@ entity TarifaBase {
   * id : UUID <<PK>>
   --
   * residuoId : UUID <<FK>>
-  categoria : VARCHAR(100)
-  destinoFinal : VARCHAR(150)
-  unidadMedida : ENUM(kg, m3, unidad, contenedor)
+  categoria : VARCHAR
+  destinoFinal : VARCHAR
+  unidadMedida : ENUM
   precioUnitario : DECIMAL
   franquiciaMinima : DECIMAL
   precioExcedente : DECIMAL
@@ -91,18 +90,15 @@ entity TarifaBase {
   activa : BOOLEAN
 }
 
-SolicitudServicio ||--o{ ItemServicioSolicitado : contiene
-SolicitudServicio ||--o{ Cotizacion : origina
+SolicitudServicio "1" -right-> "0..*" Cotizacion : origina
+SolicitudServicio "1" -down-> "1..*" ItemServicioSolicitado : contiene
 
-Cotizacion ||--|{ ItemCotizacion : desglosa
+Cotizacion "1" -down-> "1..*" ItemCotizacion : desglosa
 
-ItemCotizacion }o--o| ItemServicioSolicitado : referencia
-ItemCotizacion }o--o| TarifaBase : usa tarifa
+ItemCotizacion "0..*" .left.> "0..1" ItemServicioSolicitado : referencia
+ItemCotizacion "0..*" .down.> "0..1" TarifaBase : usa tarifa
 
-ItemServicioSolicitado }o--|| Residuo : es de tipo
-Residuo ||--o{ TarifaBase : tiene tarifas
-
-' ---- Ajuste visual ----
-Residuo -[hidden]- TarifaBase
+ItemServicioSolicitado "0..*" -down-> "1" Residuo : es de tipo
+Residuo "1" -right-> "0..*" TarifaBase : tiene tarifas
 
 @enduml

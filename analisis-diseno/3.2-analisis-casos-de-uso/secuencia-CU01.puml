@@ -1,0 +1,55 @@
+@startuml
+title Diagrama de secuencia — CU-01 Registrar lead
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.4
+skinparam defaultFontSize 11
+hide stereotype
+
+skinparam participant {
+  BackgroundColor<<B>> #fff2cc
+  BorderColor<<B>> #d6b656
+  BackgroundColor<<C>> #d5e8d4
+  BorderColor<<C>> #82b366
+  BackgroundColor<<E>> #dae8fc
+  BorderColor<<E>> #6c8ebf
+}
+
+actor "Usuario\n(Captación / Comercial)" as Usuario
+
+participant "RegistroLeadView" as View <<B>>
+participant "RegistrarLeadController" as Ctrl <<C>>
+participant "Lead" as LeadModel <<E>>
+participant "Cliente" as ClienteModel <<E>>
+
+Usuario -> View : acceder al formulario de nuevo lead
+View --> Usuario : muestra formulario vacío
+
+Usuario -> View : introducir datos del contacto\n(nombre, empresa, canal, responsable)
+View -> Ctrl : registrarLead(datosContacto)
+
+Ctrl -> ClienteModel : buscarPorCnpjONombre(empresa)
+
+alt contacto ya existe
+  ClienteModel --> Ctrl : registro encontrado
+  Ctrl --> View : alertarPosibleDuplicado(datosExistente)
+  View --> Usuario : muestra aviso de posible duplicado
+
+  alt usuario confirma registro
+    Usuario -> View : confirmarRegistro()
+    View -> Ctrl : confirmarYRegistrar()
+  else usuario descarta
+    Usuario -> View : cancelar()
+    View --> Usuario : formulario descartado
+  end
+else contacto no existe
+  ClienteModel --> Ctrl : sin coincidencias
+end
+
+Ctrl -> LeadModel : crearLead(datosContacto, usuarioId)
+LeadModel --> Ctrl : lead creado (estado: LEAD)
+
+Ctrl --> View : mostrarLeadRegistrado(leadId)
+View --> Usuario : lead disponible para evaluación
+
+@enduml

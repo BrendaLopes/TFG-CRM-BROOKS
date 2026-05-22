@@ -1,10 +1,10 @@
 @startuml
 title DER — Pipeline comercial
-top to bottom direction
-skinparam shadowing false
+
 skinparam classAttributeIconSize 0
-skinparam defaultFontSize 10
-skinparam linetype ortho
+skinparam shadowing false
+skinparam nodesep 100
+skinparam ranksep 100
 
 skinparam class {
   BackgroundColor #F3F7FD
@@ -14,9 +14,9 @@ skinparam class {
 entity Usuario {
   * id : UUID <<PK>>
   --
-  nombre : VARCHAR(100)
-  email : VARCHAR(150) <<UNIQUE>>
-  rol : ENUM(captacion, comercial, admin)
+  nombre : VARCHAR
+  email : VARCHAR <<UNIQUE>>
+  rol : ENUM
   activo : BOOLEAN
 }
 
@@ -24,9 +24,9 @@ entity Lead {
   * id : UUID <<PK>>
   --
   * usuarioId : UUID <<FK>>
-  nombreEmpresa : VARCHAR(150)
-  canalEntrada : ENUM(whatsapp, telefono, web, indicacion)
-  origen : VARCHAR(100)
+  nombreEmpresa : VARCHAR
+  canalEntrada : ENUM
+  origen : VARCHAR
   descripcionInicial : TEXT
   fechaCreacion : TIMESTAMP
 }
@@ -34,11 +34,11 @@ entity Lead {
 entity Cliente {
   * id : UUID <<PK>>
   --
-  leadId : UUID <<FK>>  // opcional
-  nombre : VARCHAR(150)
-  documentoFiscal : VARCHAR(20)
-  numeroRegistroSilc : VARCHAR(50)
-  segmento : VARCHAR(100)
+  leadId : UUID <<FK>>
+  nombre : VARCHAR
+  documentoFiscal : VARCHAR
+  numeroRegistroSilc : VARCHAR
+  segmento : VARCHAR
   direccion : TEXT
 }
 
@@ -46,21 +46,21 @@ entity Contacto {
   * id : UUID <<PK>>
   --
   * clienteId : UUID <<FK>>
-  nombre : VARCHAR(100)
-  cargo : VARCHAR(100)
-  telefono : VARCHAR(20)
-  email : VARCHAR(150)
+  nombre : VARCHAR
+  cargo : VARCHAR
+  telefono : VARCHAR
+  email : VARCHAR
 }
 
 entity Oportunidad {
   * id : UUID <<PK>>
   --
   * leadId : UUID <<FK>>
-  clienteId : UUID <<FK>>  // opcional
+  clienteId : UUID <<FK>>
   * usuarioId : UUID <<FK>>
-  estado : ENUM(lead, cualificada, en_entrevista, propuesta_elaboracion, propuesta_enviada, en_negociacion, ganada, perdida, no_viable)
-  prioridad : ENUM(alta, media, baja)
-  tipoContrato : VARCHAR(50)
+  estado : ENUM
+  prioridad : ENUM
+  tipoContrato : VARCHAR
   motivoPerdida : TEXT
   fechaCreacion : TIMESTAMP
   fechaCierre : TIMESTAMP
@@ -71,7 +71,7 @@ entity HistorialSeguimiento {
   --
   * oportunidadId : UUID <<FK>>
   fecha : TIMESTAMP
-  tipo : ENUM(llamada, email, reunion, nota)
+  tipo : ENUM
   comentario : TEXT
   fechaProximoContacto : TIMESTAMP
 }
@@ -80,10 +80,11 @@ entity Propuesta {
   * id : UUID <<PK>>
   --
   * oportunidadId : UUID <<FK>>
+  * cotizacionId : UUID <<FK>>
   fechaEmision : TIMESTAMP
   fechaEnvio : TIMESTAMP
   version : INTEGER
-  estado : ENUM(borrador, enviada, en_revision, aceptada, rechazada)
+  estado : ENUM
 }
 
 entity OrdenServicio {
@@ -91,27 +92,26 @@ entity OrdenServicio {
   --
   * oportunidadId : UUID <<FK>> <<UNIQUE>>
   fechaGeneracion : TIMESTAMP
-  tipoServicio : VARCHAR(100)
-  frecuenciaServicio : VARCHAR(50)
+  tipoServicio : VARCHAR
+  frecuenciaServicio : VARCHAR
   direccionServicio : TEXT
-  condicionPago : VARCHAR(100)
+  condicionPago : VARCHAR
   observaciones : TEXT
-  numeroOrdenSilc : VARCHAR(50)
+  numeroOrdenSilc : VARCHAR
   dataExecucao : DATE
-  unidadeOperacional : VARCHAR(100)
+  unidadeOperacional : VARCHAR
 }
 
-Usuario ||--o{ Lead : registra
-Usuario ||--o{ Oportunidad : gestiona
+Usuario "1"    -right-> "0..*" Lead : registra
+Lead    "0..*" -right-> "0..1" Cliente : se vincula a
+Cliente "1"    -right-> "1..*" Contacto : tiene
 
-Lead ||--o{ Oportunidad : origina
-Lead |o--o| Cliente 
+Lead    "1"    -down-> "0..*" Oportunidad : origina
+Cliente "0..1" -down-> "0..*" Oportunidad : asociada a
+Usuario "1"    -down-> "0..*" Oportunidad : gestiona
 
-Cliente ||--o{ Contacto : tiene
-Cliente |o--o{ Oportunidad : asociada a
-
-Oportunidad ||--o{ HistorialSeguimiento : tiene
-Oportunidad ||--o{ Propuesta : genera
-Oportunidad ||--o| OrdenServicio : genera si ganada
+Oportunidad "1" -left-> "0..*" HistorialSeguimiento : tiene
+Oportunidad "1" -down-> "0..*" Propuesta : genera
+Oportunidad "1" -right-> "0..1" OrdenServicio : genera si ganada
 
 @enduml
