@@ -1,0 +1,59 @@
+@startuml
+title Diagrama de secuencia — CU-05 Generar cotización
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.4
+skinparam defaultFontSize 11
+hide stereotype
+
+skinparam participant {
+  BackgroundColor<<B>> #fff2cc
+  BorderColor<<B>> #d6b656
+  BackgroundColor<<C>> #d5e8d4
+  BorderColor<<C>> #82b366
+  BackgroundColor<<E>> #dae8fc
+  BorderColor<<E>> #6c8ebf
+}
+
+actor Comercial
+
+participant "FormularioCotizacionView" as View <<B>>
+participant "GenerarCotizacionController" as GenCtrl <<C>>
+participant "SolicitudServicio" as Solicitud <<E>>
+participant "TarifaBase" as Tarifa <<E>>
+participant "ItemCotizacion" as Item <<E>>
+participant "Cotizacion" as Cot <<E>>
+participant "AjustarPreciosController" as AjusteCtrl <<C>>
+
+Comercial -> View : iniciar cotización
+
+View -> GenCtrl : iniciarCotizacion(oportunidadId)
+GenCtrl -> Solicitud : obtenerItemsServicio()
+Solicitud --> GenCtrl : lista de ítems
+
+loop por cada ítem solicitado
+  GenCtrl -> Tarifa : buscarTarifa(residuo, destinoFinal, unidad)
+  alt tarifa encontrada
+    Tarifa --> GenCtrl : tarifa aplicable
+    GenCtrl -> Item : calcularPrecioSugerido(tarifa, cantidad)
+  else tarifa no encontrada
+    GenCtrl -> Item : marcarPendientePrecioManual()
+  end
+end
+
+GenCtrl -> Cot : crearBorradorCotizacion(items)
+Cot --> GenCtrl : cotización borrador
+GenCtrl --> View : mostrarBorradorCotizacion(cotizacion)
+View --> Comercial : muestra precios sugeridos
+
+opt el comercial modifica algún precio
+  Comercial -> View : modificar precio
+  View -> AjusteCtrl : ajustarPrecio(itemId, precioFinal, justificacion)
+  AjusteCtrl -> Item : registrarAjusteManual(precioFinal, justificacion)
+  AjusteCtrl -> Cot : recalcularTotalFinal()
+  Cot --> AjusteCtrl : total final
+  AjusteCtrl --> View : mostrarCotizacionActualizada()
+  View --> Comercial : muestra cotización actualizada
+end
+
+@enduml

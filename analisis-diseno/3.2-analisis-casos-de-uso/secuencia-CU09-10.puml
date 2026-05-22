@@ -1,0 +1,54 @@
+@startuml
+title Diagrama de secuencia — CU-09/10 Cerrar oportunidad y generar orden de servicio
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.4
+skinparam defaultFontSize 11
+hide stereotype
+
+skinparam participant {
+  BackgroundColor<<B>> #fff2cc
+  BorderColor<<B>> #d6b656
+  BackgroundColor<<C>> #d5e8d4
+  BorderColor<<C>> #82b366
+  BackgroundColor<<E>> #dae8fc
+  BorderColor<<E>> #6c8ebf
+}
+
+actor Comercial
+
+participant "FichaOportunidadView" as View <<B>>
+participant "CerrarOportunidadController" as CerrarCtrl <<C>>
+participant "GenerarOrdenServicioController" as OSCtrl <<C>>
+participant "Oportunidad" as Op <<E>>
+participant "Propuesta" as Prop <<E>>
+participant "OrdenServicio" as OS <<E>>
+
+note right of CerrarCtrl
+  Flujo principal: oportunidad ganada.
+  Para los casos perdida y no viable, el controlador actualiza el estado y registra el motivo sin generar OS.
+end note
+
+Comercial -> View : registrar cierre como ganada
+View -> CerrarCtrl : cerrarComoGanada(oportunidadId)
+CerrarCtrl -> Op : actualizarEstado(GANADA)
+CerrarCtrl -> Prop : marcarAceptada()
+CerrarCtrl -> OSCtrl : generarOrdenServicio(oportunidadId)
+
+OSCtrl -> Op : obtenerDatosServicio()
+Op --> OSCtrl : datos cliente, servicio, cotización
+OSCtrl -> OS : crearOrdenServicio(datos)
+OS --> OSCtrl : ordenServicio
+
+OSCtrl --> View : mostrarOrdenServicio(ordenServicio)
+View --> Comercial : previsualización OS lista
+
+opt comercial exporta la OS
+  Comercial -> View : exportarPDF()
+  View -> OSCtrl : exportarOrdenServicio(osId)
+  OSCtrl -> OS : generarPDF()
+  OS --> OSCtrl : archivo PDF
+  OSCtrl --> View : descargaPDF
+  View --> Comercial : descarga PDF
+end
+
+@enduml
