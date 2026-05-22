@@ -1,0 +1,117 @@
+@startuml
+title DER — Pipeline comercial
+top to bottom direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 10
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor #F3F7FD
+  BorderColor #6C8EBF
+}
+
+entity Usuario {
+  * id : UUID <<PK>>
+  --
+  nombre : VARCHAR(100)
+  email : VARCHAR(150) <<UNIQUE>>
+  rol : ENUM(captacion, comercial, admin)
+  activo : BOOLEAN
+}
+
+entity Lead {
+  * id : UUID <<PK>>
+  --
+  * usuarioId : UUID <<FK>>
+  nombreEmpresa : VARCHAR(150)
+  canalEntrada : ENUM(whatsapp, telefono, web, indicacion)
+  origen : VARCHAR(100)
+  descripcionInicial : TEXT
+  fechaCreacion : TIMESTAMP
+}
+
+entity Cliente {
+  * id : UUID <<PK>>
+  --
+  leadId : UUID <<FK>>  // opcional
+  nombre : VARCHAR(150)
+  documentoFiscal : VARCHAR(20)
+  numeroRegistroSilc : VARCHAR(50)
+  segmento : VARCHAR(100)
+  direccion : TEXT
+}
+
+entity Contacto {
+  * id : UUID <<PK>>
+  --
+  * clienteId : UUID <<FK>>
+  nombre : VARCHAR(100)
+  cargo : VARCHAR(100)
+  telefono : VARCHAR(20)
+  email : VARCHAR(150)
+}
+
+entity Oportunidad {
+  * id : UUID <<PK>>
+  --
+  * leadId : UUID <<FK>>
+  clienteId : UUID <<FK>>  // opcional
+  * usuarioId : UUID <<FK>>
+  estado : ENUM(lead, cualificada, en_entrevista, propuesta_elaboracion, propuesta_enviada, en_negociacion, ganada, perdida, no_viable)
+  prioridad : ENUM(alta, media, baja)
+  tipoContrato : VARCHAR(50)
+  motivoPerdida : TEXT
+  fechaCreacion : TIMESTAMP
+  fechaCierre : TIMESTAMP
+}
+
+entity HistorialSeguimiento {
+  * id : UUID <<PK>>
+  --
+  * oportunidadId : UUID <<FK>>
+  fecha : TIMESTAMP
+  tipo : ENUM(llamada, email, reunion, nota)
+  comentario : TEXT
+  fechaProximoContacto : TIMESTAMP
+}
+
+entity Propuesta {
+  * id : UUID <<PK>>
+  --
+  * oportunidadId : UUID <<FK>>
+  fechaEmision : TIMESTAMP
+  fechaEnvio : TIMESTAMP
+  version : INTEGER
+  estado : ENUM(borrador, enviada, en_revision, aceptada, rechazada)
+}
+
+entity OrdenServicio {
+  * id : UUID <<PK>>
+  --
+  * oportunidadId : UUID <<FK>> <<UNIQUE>>
+  fechaGeneracion : TIMESTAMP
+  tipoServicio : VARCHAR(100)
+  frecuenciaServicio : VARCHAR(50)
+  direccionServicio : TEXT
+  condicionPago : VARCHAR(100)
+  observaciones : TEXT
+  numeroOrdenSilc : VARCHAR(50)
+  dataExecucao : DATE
+  unidadeOperacional : VARCHAR(100)
+}
+
+Usuario ||--o{ Lead : registra
+Usuario ||--o{ Oportunidad : gestiona
+
+Lead ||--o{ Oportunidad : origina
+Lead |o--o| Cliente 
+
+Cliente ||--o{ Contacto : tiene
+Cliente |o--o{ Oportunidad : asociada a
+
+Oportunidad ||--o{ HistorialSeguimiento : tiene
+Oportunidad ||--o{ Propuesta : genera
+Oportunidad ||--o| OrdenServicio : genera si ganada
+
+@enduml

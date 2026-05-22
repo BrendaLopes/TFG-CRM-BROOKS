@@ -1,0 +1,108 @@
+@startuml
+title DER — Proceso de cotización
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 10
+skinparam ranksep 45
+skinparam nodesep 30
+
+skinparam class {
+  BackgroundColor #F3F7FD
+  BorderColor #6C8EBF
+}
+
+entity SolicitudServicio {
+  * id : UUID <<PK>>
+  --
+  * oportunidadId : UUID <<FK>>
+  tipoServicio : VARCHAR(100)
+  frecuenciaServicio : VARCHAR(50)
+  direccionServicio : TEXT
+  restriccionesHorario : TEXT
+  observaciones : TEXT
+  requiereFichaSeguridad : BOOLEAN
+  accesoVehiculo : BOOLEAN
+}
+
+entity Cotizacion {
+  * id : UUID <<PK>>
+  --
+  * solicitudId : UUID <<FK>>
+  fechaGeneracion : TIMESTAMP
+  estado : ENUM(borrador, finalizada)
+  distanciaCalculada : DECIMAL
+  tiempoEstimadoServicio : INTEGER
+  totalSugerido : DECIMAL
+  totalFinal : DECIMAL
+  observaciones : TEXT
+}
+
+entity ItemCotizacion {
+  * id : UUID <<PK>>
+  --
+  * cotizacionId : UUID <<FK>>
+  tarifaBaseId : UUID <<FK>>
+  itemServicioId : UUID <<FK>>
+  descripcion : VARCHAR(200)
+  cantidad : DECIMAL
+  unidad : VARCHAR(20)
+  precioSugerido : DECIMAL
+  precioFinal : DECIMAL
+  subtotal : DECIMAL
+  franquicia : DECIMAL
+  ajusteManual : BOOLEAN
+  justificacionAjuste : TEXT
+}
+
+entity ItemServicioSolicitado {
+  * id : UUID <<PK>>
+  --
+  * solicitudId : UUID <<FK>>
+  * residuoId : UUID <<FK>>
+  cantidadEstimada : DECIMAL
+  unidadMedida : ENUM(kg, m3, unidad, contenedor)
+  acondicionamiento : VARCHAR(100)
+  descripcionDetallada : TEXT
+}
+
+entity Residuo {
+  * id : UUID <<PK>>
+  --
+  codigoInterno : VARCHAR(50)
+  nombre : VARCHAR(150)
+  grupo : VARCHAR(100)
+  codigoIbama : VARCHAR(20)
+  clase : ENUM(I, IIA, IIB)
+  activo : BOOLEAN
+}
+
+entity TarifaBase {
+  * id : UUID <<PK>>
+  --
+  * residuoId : UUID <<FK>>
+  categoria : VARCHAR(100)
+  destinoFinal : VARCHAR(150)
+  unidadMedida : ENUM(kg, m3, unidad, contenedor)
+  precioUnitario : DECIMAL
+  franquiciaMinima : DECIMAL
+  precioExcedente : DECIMAL
+  vigencia : DATE
+  activa : BOOLEAN
+}
+
+SolicitudServicio ||--o{ ItemServicioSolicitado : contiene
+SolicitudServicio ||--o{ Cotizacion : origina
+
+Cotizacion ||--|{ ItemCotizacion : desglosa
+
+ItemCotizacion }o--o| ItemServicioSolicitado : referencia
+ItemCotizacion }o--o| TarifaBase : usa tarifa
+
+ItemServicioSolicitado }o--|| Residuo : es de tipo
+Residuo ||--o{ TarifaBase : tiene tarifas
+
+' ---- Ajuste visual ----
+Residuo -[hidden]- TarifaBase
+
+@enduml
