@@ -1,0 +1,44 @@
+@startuml
+title Diagrama de arquitectura — Sistema CRM Brooks Ambiental
+skinparam shadowing false
+skinparam defaultFontSize 11
+skinparam componentBorderColor #444444
+skinparam componentBackgroundColor #FEFEFE
+skinparam nodeBorderColor #444444
+skinparam nodeBackgroundColor #FAFAFA
+skinparam databaseBorderColor #444444
+skinparam databaseBackgroundColor #fff2cc
+skinparam rectangleBorderColor #888888
+skinparam arrowColor #444444
+
+node "Cliente" {
+  component "React SPA" as SPA
+}
+
+node "Servidor" {
+  component "API REST\nNode.js + Express" as API
+
+  rectangle "Backend" {
+    component "Middleware JWT" as JWT
+    component "Servicios de negocio" as Services
+    component "Generador PDF" as PDF
+    component "Prisma ORM" as Prisma
+  }
+}
+
+database "PostgreSQL" as DB
+
+node "Sistema externo\n(futura integración)" {
+  component "SILC API REST" as SILC
+}
+
+SPA -down-> API : HTTP / JSON
+API -down-> JWT : valida token
+JWT -down-> Services : solicitud autorizada
+Services -down-> PDF : genera PDF / OS
+Services -down-> Prisma : consulta / persiste
+Prisma -down-> DB : consultas SQL
+
+Services -right-> SILC : HTTP/JSON + JWT / API Key\n«futura integración»
+
+@enduml

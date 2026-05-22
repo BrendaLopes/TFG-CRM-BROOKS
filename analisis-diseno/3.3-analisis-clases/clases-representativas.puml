@@ -1,0 +1,65 @@
+@startuml
+title Diagrama de clases de análisis — clases representativas
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 11
+hide circle
+
+skinparam class {
+  BackgroundColor<<Controller>> #d5e8d4
+  BorderColor<<Controller>> #82b366
+  BackgroundColor<<Entity>> #dae8fc
+  BorderColor<<Entity>> #6c8ebf
+}
+
+class GenerarCotizacionController <<Controller>> {
+  + iniciarCotizacion(oportunidadId)
+  + buscarTarifa(residuoId, destinoFinal, unidad)
+  + calcularPrecioSugerido(tarifa, cantidad)
+  + aplicarExcedente(cantidad, franquicia, precioExcedente)
+  + crearBorradorCotizacion(items)
+}
+
+class Cotizacion <<Entity>> {
+  - totalSugerido
+  - totalFinal
+  - estado
+  - distanciaCalculada
+  + recalcularTotalFinal()
+}
+
+class ItemCotizacion <<Entity>> {
+  - precioSugerido
+  - precioFinal
+  - franquicia
+  - ajusteManual
+  - justificacionAjuste
+  + registrarAjusteManual(precioFinal, justificacion)
+}
+
+class TarifaBase <<Entity>> {
+  - precioUnitario
+  - franquiciaMinima
+  - precioExcedente
+  - unidadMedida
+  - destinoFinal
+  - activa
+}
+
+class OrdenServicio <<Entity>> {
+  - numeroRegistroSILC
+  - dataExecucao
+  - unidadeOperacional
+  + generarPayloadSILC()
+  + validarDatosObligatorios()
+}
+
+GenerarCotizacionController -down-> Cotizacion : crea
+GenerarCotizacionController -down-> ItemCotizacion : crea
+GenerarCotizacionController -right-> TarifaBase : consulta
+
+Cotizacion -right-> ItemCotizacion : contiene
+Cotizacion ..> OrdenServicio : aporta datos para handover
+
+@enduml
