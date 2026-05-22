@@ -1,0 +1,29 @@
+@startuml
+title Diagrama de paquetes del análisis de arquitectura
+top to bottom direction
+skinparam defaultFontSize 13
+hide stereotype
+
+skinparam package {
+  BackgroundColor<<V>> #fff2cc
+  BorderColor<<V>> #d6b656
+  BackgroundColor<<C>> #d5e8d4
+  BorderColor<<C>> #82b366
+  BackgroundColor<<E>> #dae8fc
+  BorderColor<<E>> #6c8ebf
+  FontStyle bold
+}
+
+package "Views" <<V>> {
+}
+
+package "Controllers" <<C>> {
+}
+
+package "Models" <<E>> {
+}
+
+Views -down-> Controllers : solicita acciones
+Controllers -down-> Models : consulta / modifica
+
+@enduml
