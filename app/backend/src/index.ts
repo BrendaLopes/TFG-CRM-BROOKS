@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import authRoutes from './routes/auth.routes'
 
 dotenv.config()
 
@@ -15,8 +16,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Brooks CRM API running' })
 })
 
+
 // Rutas (las iremos añadiendo)
-// app.use('/api/auth', authRoutes)
+app.use('/api/auth', authRoutes)
 // app.use('/api/leads', leadRoutes)
 
 app.listen(PORT, () => {
