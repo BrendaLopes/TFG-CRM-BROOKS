@@ -1,0 +1,302 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────
+
+enum Rol {
+  CAPTACION
+  COMERCIAL
+  ADMINISTRADOR
+}
+
+enum CanalEntrada {
+  TELEFONO
+  WHATSAPP
+  WEB
+  INDICACION
+}
+
+enum EstadoOportunidad {
+  LEAD
+  CUALIFICADA
+  EN_ENTREVISTA_TECNICA
+  PROPUESTA_EN_ELABORACION
+  PROPUESTA_ENVIADA
+  EN_NEGOCIACION
+  GANADA
+  PERDIDA
+  NO_VIABLE
+}
+
+enum TipoContrato {
+  RECORRENTE
+  PONTUAL
+}
+
+enum Prioridad {
+  ALTA
+  MEDIA
+  BAJA
+}
+
+enum EstadoPropuesta {
+  BORRADOR
+  ENVIADA
+  EN_REVISION
+  ACEPTADA
+  RECHAZADA
+}
+
+enum UnidadMedida {
+  KG
+  M3
+  UNIDAD
+  CONTENEDOR
+}
+
+enum ClaseResiduo {
+  CLASE_I
+  CLASE_IIA
+  CLASE_IIB
+}
+
+// ─── USUARIOS ────────────────────────────────────────
+
+model Usuario {
+  id        String   @id @default(uuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  rol       Rol
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
+
+  leads         Lead[]
+  oportunidades Oportunidad[]
+  interacciones HistorialSeguimiento[]
+}
+
+// ─── CLIENTES Y CONTACTOS ────────────────────────────
+
+model Cliente {
+  id                  String   @id @default(uuid())
+  nombre              String
+  documentoFiscal     String
+  numeroRegistroSilc  String?
+  segmento            String?
+  direccion           String?
+  creadoEn            DateTime @default(now())
+
+  leads         Lead[]
+  contactos     Contacto[]
+  oportunidades Oportunidad[]
+}
+
+model Contacto {
+  id         String  @id @default(uuid())
+  clienteId  String
+  nombre     String
+  cargo      String?
+  telefono   String?
+  email      String?
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+}
+
+// ─── LEADS ───────────────────────────────────────────
+
+model Lead {
+  id                  String       @id @default(uuid())
+  usuarioId           String
+  clienteId           String?
+  nombreEmpresa       String
+  canalEntrada        CanalEntrada
+  origen              String?
+  descripcionInicial  String?
+  fechaCreacion       DateTime     @default(now())
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
+  cliente     Cliente?     @relation(fields: [clienteId], references: [id])
+  oportunidad Oportunidad?
+}
+
+// ─── OPORTUNIDADES ───────────────────────────────────
+
+model Oportunidad {
+  id             String            @id @default(uuid())
+  leadId         String            @unique
+  clienteId      String
+  usuarioId      String
+  estado         EstadoOportunidad @default(LEAD)
+  tipo           TipoContrato?
+  prioridad      Prioridad?
+  motivoPerdida  String?
+  fechaCreacion  DateTime          @default(now())
+  fechaCierre    DateTime?
+
+  lead              Lead                   @relation(fields: [leadId], references: [id])
+  cliente           Cliente                @relation(fields: [clienteId], references: [id])
+  usuario           Usuario                @relation(fields: [usuarioId], references: [id])
+  historial         HistorialSeguimiento[]
+  solicitudServicio SolicitudServicio?
+  propuestas        Propuesta[]
+  ordenServicio     OrdenServicio?
+}
+
+// ─── HISTORIAL ───────────────────────────────────────
+
+model HistorialSeguimiento {
+  id              String   @id @default(uuid())
+  oportunidadId   String
+  usuarioId       String
+  fecha           DateTime @default(now())
+  comentario      String   @db.Text
+  fechaProximoContacto DateTime?
+
+  oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id])
+}
+
+// ─── SOLICITUD DE SERVICIO ───────────────────────────
+
+model SolicitudServicio {
+  id                    String   @id @default(uuid())
+  oportunidadId         String   @unique
+  tipoServicio          String
+  frecuenciaServicio    String
+  direccionServicio     String   @db.Text
+  restriccionesHorario  String?
+  observaciones         String?  @db.Text
+  requiereFichaSeguridad Boolean @default(false)
+  accesoVehiculo        Boolean @default(true)
+  creadoEn              DateTime @default(now())
+
+  oportunidad Oportunidad             @relation(fields: [oportunidadId], references: [id])
+  items       ItemServicioSolicitado[]
+  cotizacion  Cotizacion?
+}
+
+model ItemServicioSolicitado {
+  id                  String       @id @default(uuid())
+  solicitudId         String
+  residuoId           String
+  cantidadEstimada    Decimal
+  unidadMedida        UnidadMedida
+  acondicionamiento   String?
+  descripcionDetallada String?     @db.Text
+
+  solicitud      SolicitudServicio @relation(fields: [solicitudId], references: [id])
+  residuo        Residuo           @relation(fields: [residuoId], references: [id])
+  itemsCotizacion ItemCotizacion[]
+}
+
+// ─── COTIZACIÓN ──────────────────────────────────────
+
+model Cotizacion {
+  id                   String   @id @default(uuid())
+  solicitudId          String   @unique
+  fechaGeneracion      DateTime @default(now())
+  estado               String   @default("BORRADOR")
+  distanciaCalculada   Decimal?
+  tiempoEstimadoServicio Int?
+  totalSugerido        Decimal  @default(0)
+  totalFinal           Decimal  @default(0)
+  observaciones        String?  @db.Text
+
+  solicitud  SolicitudServicio @relation(fields: [solicitudId], references: [id])
+  items      ItemCotizacion[]
+  propuestas Propuesta[]
+}
+
+model ItemCotizacion {
+  id                  String   @id @default(uuid())
+  cotizacionId        String
+  tarifaBaseId        String?
+  itemServicioId      String?
+  descripcion         String
+  cantidad            Decimal
+  unidad              UnidadMedida
+  precioSugerido      Decimal
+  precioFinal         Decimal
+  subtotal            Decimal
+  franquicia          Decimal  @default(0)
+  ajusteManual        Boolean  @default(false)
+  justificacionAjuste String?  @db.Text
+
+  cotizacion    Cotizacion             @relation(fields: [cotizacionId], references: [id])
+  tarifaBase    TarifaBase?            @relation(fields: [tarifaBaseId], references: [id])
+  itemServicio  ItemServicioSolicitado? @relation(fields: [itemServicioId], references: [id])
+}
+
+// ─── PROPUESTA ───────────────────────────────────────
+
+model Propuesta {
+  id              String          @id @default(uuid())
+  oportunidadId   String
+  cotizacionId    String
+  usuarioId       String?
+  numeroPropuesta String
+  version         Int             @default(1)
+  estado          EstadoPropuesta @default(BORRADOR)
+  fechaEmision    DateTime        @default(now())
+  fechaEnvio      DateTime?
+
+  oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
+  cotizacion  Cotizacion  @relation(fields: [cotizacionId], references: [id])
+}
+
+// ─── ORDEN DE SERVICIO ───────────────────────────────
+
+model OrdenServicio {
+  id                 String   @id @default(uuid())
+  oportunidadId      String   @unique
+  fechaGeneracion    DateTime @default(now())
+  tipoServicio       String
+  documentoFiscal    String
+  frecuenciaServicio String
+  direccionServicio  String   @db.Text
+  condicionPago      String?
+  observaciones      String?  @db.Text
+  numeroOrdenSilc    String?
+  dataExecucao       DateTime?
+  unidadeOperacional String?
+
+  oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
+}
+
+// ─── CATÁLOGO ────────────────────────────────────────
+
+model Residuo {
+  id            String       @id @default(uuid())
+  codigoInterno String
+  codigoIbama   String?
+  nombre        String
+  grupo         String?
+  clase         ClaseResiduo
+  activo        Boolean      @default(true)
+
+  items       ItemServicioSolicitado[]
+  tarifasBase TarifaBase[]
+}
+
+model TarifaBase {
+  id               String       @id @default(uuid())
+  residuoId        String
+  categoria        String
+  destinoFinal     String
+  unidadMedida     UnidadMedida
+  precioUnitario   Decimal
+  franquiciaMinima Decimal      @default(0)
+  precioExcedente  Decimal?
+  vigencia         DateTime?
+  activa           Boolean      @default(true)
+
+  residuo Residuo          @relation(fields: [residuoId], references: [id])
+  items   ItemCotizacion[]
+}
