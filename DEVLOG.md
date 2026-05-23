@@ -37,3 +37,20 @@ app/backend/
 
 ### Próximo paso
 Implementar autenticación JWT (registro + login de usuarios)
+
+## Autenticación JWT
+
+**Estado:** ✅ Completado
+
+### Lo que funciona
+- POST /api/auth/registrar — crea usuario con password hasheado (bcrypt)
+- POST /api/auth/login — devuelve token JWT con expiración 8h
+- Middleware verificarToken — protege rutas privadas
+
+### Decisiones tomadas
+- Roles manejados como enum en BD: CAPTACION, COMERCIAL, ADMINISTRADOR
+- Token incluye id y rol del usuario para control de acceso por ruta
+- Expiración del token: 8 horas (sesión de trabajo diaria)
+
+### Próximo paso
+CRUD de Leads — primer flujo del ciclo comercial (CU-01 / CU-02)
