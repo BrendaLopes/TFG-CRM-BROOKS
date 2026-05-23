@@ -54,3 +54,74 @@ Implementar autenticación JWT (registro + login de usuarios)
 
 ### Próximo paso
 CRUD de Leads — primer flujo del ciclo comercial (CU-01 / CU-02)
+
+---
+
+## CRUD de Leads (CU-01 / CU-02)
+
+**Estado:** ✅ Completado
+
+### Endpoints implementados
+- POST /api/leads — crea lead, detecta posibles duplicados por nombre de empresa
+- GET /api/leads — lista todos los leads con usuario y cliente asociado
+- GET /api/leads/:id — detalle de un lead con oportunidad asociada
+- PUT /api/leads/:id — actualiza datos del lead
+
+### Decisiones tomadas
+- Detección de duplicados: búsqueda case-insensitive por nombreEmpresa
+- Respuesta incluye flag `posibleDuplicado` para alertar al usuario en el frontend
+- Todas las rutas protegidas con middleware verificarToken
+
+### Próximo paso
+CRUD de Clientes + conversión Lead → Oportunidad (CU-03)
+
+---
+
+## Clientes y Pipeline de Oportunidades (CU-03)
+
+**Estado:** ✅ Completado
+
+### Endpoints implementados
+- POST /api/clientes — crea cliente con datos fiscales
+- GET /api/clientes — lista clientes con contactos
+- GET /api/clientes/:id — detalle con oportunidades asociadas
+- PUT /api/clientes/:id — actualiza cliente
+- POST /api/clientes/:id/contactos — añade contacto a cliente
+- POST /api/oportunidades — convierte lead en oportunidad (estado inicial: LEAD)
+- GET /api/oportunidades — devuelve pipeline completo con datos de lead, cliente y usuario
+- GET /api/oportunidades/:id — ficha completa con historial, solicitud, propuestas y OS
+- PATCH /api/oportunidades/:id/estado — avanza estado en el pipeline
+- POST /api/oportunidades/:id/interacciones — registra interacción con el cliente
+
+### Decisiones tomadas
+- La oportunidad se crea siempre en estado LEAD
+- El cierre automático registra fechaCierre cuando el estado es GANADA, PERDIDA o NO_VIABLE
+- El pipeline devuelve solo la última versión de propuesta por oportunidad
+
+### Próximo paso
+Solicitud de servicio + cotización asistida (CU-04 / CU-05 / CU-06)
+
+---
+
+## Solicitud de Servicio y Cotización Asistida (CU-04 / CU-05 / CU-06)
+
+**Estado:** ✅ Completado
+
+### Endpoints implementados
+- POST /api/cotizaciones/residuos — crea residuo en catálogo
+- GET /api/cotizaciones/residuos — lista residuos activos con tarifas
+- POST /api/cotizaciones/tarifas — crea tarifa base
+- GET /api/cotizaciones/tarifas — lista tarifas activas
+- POST /api/cotizaciones/solicitudes — registra datos técnicos del servicio con ítems
+- POST /api/cotizaciones/solicitudes/:id/cotizar — genera cotización con precios sugeridos
+- GET /api/cotizaciones/:id — obtiene cotización completa
+- PATCH /api/cotizaciones/:id/items/:itemId/precio — ajuste manual con justificación
+
+### Lógica de cotización verificada
+- Precio sugerido = precioUnitario × cantidad
+- Si cantidad > franquiciaMinima: primeras N kg a precio base, excedente a precioExcedente
+- Ejemplo verificado: 800 kg, franquicia 500, precio 0.45, excedente 0.38 → R$339
+- Items sin tarifa configurada se marcan como ajusteManual=true
+
+### Próximo paso
+Generación de propuesta PDF (CU-07) y orden de servicio (CU-09/10)
