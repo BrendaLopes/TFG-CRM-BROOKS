@@ -1,0 +1,35 @@
+@startuml
+title Integración CRM — SILC
+
+skinparam shadowing false
+skinparam defaultFontSize 11
+skinparam componentBorderColor #444444
+skinparam componentBackgroundColor #FEFEFE
+skinparam nodeBorderColor #444444
+skinparam nodeBackgroundColor #FAFAFA
+skinparam arrowColor #444444
+skinparam noteBorderColor #d6b656
+skinparam noteBackgroundColor #fff2cc
+
+node "CRM Brooks Ambiental" {
+  component "SilcIntegrationService" as SIS
+  database "OrdenServicio" as DB
+}
+
+cloud "SILC" as SILC {
+  component "POST /api/v1/ordens-servico" as API
+}
+
+DB -right-> SIS : lee datos OS
+SIS -right-> API : HTTP/JSON + JWT\n«integración futura»
+
+note right of API
+  Payload JSON:
+  cliente_id, tipo_residuo,
+  codigo_servico, quantidade,
+  unidade, endereco,
+  data_execucao,
+  unidade_operacional
+end note
+
+@enduml

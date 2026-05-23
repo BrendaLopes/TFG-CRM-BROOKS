@@ -1,0 +1,299 @@
+// schema.prisma
+// Brooks Ambiental CRM — Modelo físico
+// Generado a partir del DER lógico (cap. 3.6.1)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// PIPELINE COMERCIAL
+// ─────────────────────────────────────────
+
+enum Rol {
+  captacion
+  comercial
+  admin
+}
+
+enum CanalEntrada {
+  whatsapp
+  telefono
+  web
+  indicacion
+}
+
+enum EstadoOportunidad {
+  lead
+  cualificada
+  en_entrevista
+  propuesta_elaboracion
+  propuesta_enviada
+  en_negociacion
+  ganada
+  perdida
+  no_viable
+}
+
+enum Prioridad {
+  alta
+  media
+  baja
+}
+
+enum TipoInteraccion {
+  llamada
+  email
+  reunion
+  nota
+}
+
+enum EstadoPropuesta {
+  borrador
+  enviada
+  en_revision
+  aceptada
+  rechazada
+}
+
+// ─────────────────────────────────────────
+// COTIZACIÓN
+// ─────────────────────────────────────────
+
+enum EstadoCotizacion {
+  borrador
+  finalizada
+}
+
+enum UnidadMedida {
+  kg
+  m3
+  unidad
+  contenedor
+}
+
+enum ClaseResiduoNBR {
+  I
+  IIA
+  IIB
+}
+
+// ─────────────────────────────────────────
+// MODELOS
+// ─────────────────────────────────────────
+
+model Usuario {
+  id       String  @id @default(uuid())
+  nombre   String  @db.VarChar(100)
+  email    String  @unique @db.VarChar(150)
+  password String
+  rol      Rol
+  activo   Boolean @default(true)
+
+  leads         Lead[]
+  oportunidades Oportunidad[]
+}
+
+model Lead {
+  id                String       @id @default(uuid())
+  usuarioId         String
+  nombreEmpresa     String       @db.VarChar(150)
+  canalEntrada      CanalEntrada
+  origen            String?      @db.VarChar(100)
+  descripcionInicial String?     @db.Text
+  fechaCreacion     DateTime     @default(now())
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
+  cliente     Cliente?
+  oportunidades Oportunidad[]
+}
+
+model Cliente {
+  id                 String  @id @default(uuid())
+  leadId             String? @unique
+  nombre             String  @db.VarChar(150)
+  documentoFiscal    String? @db.VarChar(20)
+  numeroRegistroSilc String? @db.VarChar(50)
+  segmento           String? @db.VarChar(100)
+  direccion          String? @db.Text
+
+  lead          Lead?         @relation(fields: [leadId], references: [id])
+  contactos     Contacto[]
+  oportunidades Oportunidad[]
+}
+
+model Contacto {
+  id        String  @id @default(uuid())
+  clienteId String
+  nombre    String  @db.VarChar(100)
+  cargo     String? @db.VarChar(100)
+  telefono  String? @db.VarChar(20)
+  email     String? @db.VarChar(150)
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+}
+
+model Oportunidad {
+  id             String            @id @default(uuid())
+  leadId         String
+  clienteId      String?
+  usuarioId      String
+  estado         EstadoOportunidad @default(lead)
+  prioridad      Prioridad         @default(media)
+  tipoContrato   String?           @db.VarChar(50)
+  motivoPerdida  String?           @db.Text
+  fechaCreacion  DateTime          @default(now())
+  fechaCierre    DateTime?
+
+  lead              Lead                @relation(fields: [leadId], references: [id])
+  cliente           Cliente?            @relation(fields: [clienteId], references: [id])
+  usuario           Usuario             @relation(fields: [usuarioId], references: [id])
+  historial         HistorialSeguimiento[]
+  propuestas        Propuesta[]
+  ordenServicio     OrdenServicio?
+  solicitudServicio SolicitudServicio?
+}
+
+model HistorialSeguimiento {
+  id                   String          @id @default(uuid())
+  oportunidadId        String
+  fecha                DateTime        @default(now())
+  tipo                 TipoInteraccion
+  comentario           String          @db.Text
+  fechaProximoContacto DateTime?
+
+  oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
+}
+
+model Propuesta {
+  id            String          @id @default(uuid())
+  oportunidadId String
+  cotizacionId  String
+  fechaEmision  DateTime        @default(now())
+  fechaEnvio    DateTime?
+  version       Int             @default(1)
+  estado        EstadoPropuesta @default(borrador)
+
+  oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
+  cotizacion  Cotizacion  @relation(fields: [cotizacionId], references: [id])
+}
+
+model OrdenServicio {
+  id                 String    @id @default(uuid())
+  oportunidadId      String    @unique
+  fechaGeneracion    DateTime  @default(now())
+  tipoServicio       String?   @db.VarChar(100)
+  frecuenciaServicio String?   @db.VarChar(50)
+  direccionServicio  String?   @db.Text
+  condicionPago      String?   @db.VarChar(100)
+  observaciones      String?   @db.Text
+  numeroOrdenSilc    String?   @db.VarChar(50)
+  dataExecucao       DateTime? @db.Date
+  unidadeOperacional String?   @db.VarChar(100)
+
+  oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
+}
+
+// ─────────────────────────────────────────
+// PROCESO DE COTIZACIÓN
+// ─────────────────────────────────────────
+
+model SolicitudServicio {
+  id                    String   @id @default(uuid())
+  oportunidadId         String   @unique
+  tipoServicio          String?  @db.VarChar(100)
+  frecuenciaServicio    String?  @db.VarChar(50)
+  direccionServicio     String?  @db.Text
+  restriccionesHorario  String?  @db.Text
+  observaciones         String?  @db.Text
+  requiereFichaSeguridad Boolean @default(false)
+  accesoVehiculo        Boolean  @default(true)
+
+  oportunidad           Oportunidad            @relation(fields: [oportunidadId], references: [id])
+  itemsServicio         ItemServicioSolicitado[]
+  cotizaciones          Cotizacion[]
+}
+
+model ItemServicioSolicitado {
+  id                  String       @id @default(uuid())
+  solicitudId         String
+  residuoId           String
+  cantidadEstimada    Decimal      @db.Decimal(10, 2)
+  unidadMedida        UnidadMedida
+  acondicionamiento   String?      @db.VarChar(100)
+  descripcionDetallada String?     @db.Text
+
+  solicitud     SolicitudServicio @relation(fields: [solicitudId], references: [id])
+  residuo       Residuo           @relation(fields: [residuoId], references: [id])
+  itemsCotizacion ItemCotizacion[]
+}
+
+model Cotizacion {
+  id                    String           @id @default(uuid())
+  solicitudId           String
+  fechaGeneracion       DateTime         @default(now())
+  estado                EstadoCotizacion @default(borrador)
+  distanciaCalculada    Decimal?         @db.Decimal(10, 2)
+  tiempoEstimadoServicio Int?
+  totalSugerido         Decimal          @db.Decimal(10, 2)
+  totalFinal            Decimal          @db.Decimal(10, 2)
+  observaciones         String?          @db.Text
+
+  solicitud  SolicitudServicio @relation(fields: [solicitudId], references: [id])
+  items      ItemCotizacion[]
+  propuestas Propuesta[]
+}
+
+model ItemCotizacion {
+  id                 String   @id @default(uuid())
+  cotizacionId       String
+  tarifaBaseId       String?
+  itemServicioId     String?
+  descripcion        String?  @db.VarChar(200)
+  cantidad           Decimal  @db.Decimal(10, 2)
+  unidad             String   @db.VarChar(20)
+  precioSugerido     Decimal  @db.Decimal(10, 2)
+  precioFinal        Decimal  @db.Decimal(10, 2)
+  subtotal           Decimal  @db.Decimal(10, 2)
+  franquicia         Decimal? @db.Decimal(10, 2)
+  ajusteManual       Boolean  @default(false)
+  justificacionAjuste String? @db.Text
+
+  cotizacion     Cotizacion              @relation(fields: [cotizacionId], references: [id])
+  tarifaBase     TarifaBase?             @relation(fields: [tarifaBaseId], references: [id])
+  itemServicio   ItemServicioSolicitado? @relation(fields: [itemServicioId], references: [id])
+}
+
+model Residuo {
+  id            String          @id @default(uuid())
+  codigoInterno String          @db.VarChar(50)
+  nombre        String          @db.VarChar(150)
+  grupo         String?         @db.VarChar(100)
+  codigoIbama   String?         @db.VarChar(20)
+  clase         ClaseResiduoNBR
+  activo        Boolean         @default(true)
+
+  itemsServicio ItemServicioSolicitado[]
+  tarifas       TarifaBase[]
+}
+
+model TarifaBase {
+  id               String       @id @default(uuid())
+  residuoId        String
+  categoria        String?      @db.VarChar(100)
+  destinoFinal     String       @db.VarChar(150)
+  unidadMedida     UnidadMedida
+  precioUnitario   Decimal      @db.Decimal(10, 2)
+  franquiciaMinima Decimal?     @db.Decimal(10, 2)
+  precioExcedente  Decimal?     @db.Decimal(10, 2)
+  vigencia         DateTime?    @db.Date
+  activa           Boolean      @default(true)
+
+  residuo         Residuo          @relation(fields: [residuoId], references: [id])
+  itemsCotizacion ItemCotizacion[]
+}
