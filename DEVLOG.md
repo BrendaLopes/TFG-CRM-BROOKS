@@ -217,3 +217,25 @@ CU-09/10 — Cerrar oportunidad y generar Orden de Servicio PDF
 ### Próximo paso
 Seed de datos reales (catálogo Brooks) cuando llegue el Excel con precios
 + arrancar con el frontend
+
+---
+
+## Frontend — Setup inicial (Login + Auth)
+
+**Estado:** ✅ Completado
+
+### Lo que funciona
+- Vite + React + TypeScript + Tailwind configurados
+- Cliente HTTP con axios — proxy hacia backend en puerto 3000
+- Contexto de autenticación — token y usuario en localStorage
+- Login con validación y manejo de errores
+- Rutas protegidas — redirige a /login si no autenticado
+- Logout funcional
+
+### Estilo visual adoptado
+- Referencia: sistema SILC de Brooks (rojo corporativo, tablas funcionales)
+- CRM adopta paleta más limpia para contexto comercial
+- Verde oscuro como color principal (diferencia del rojo operativo del SILC)
+
+### Próximo paso
+Pipeline Kanban — pantalla principal del sistema
