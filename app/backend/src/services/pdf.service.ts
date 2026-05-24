@@ -117,8 +117,8 @@ export const generarPDFPropuesta = async (propuesta: any): Promise<Buffer> => {
 
   <div class="dados-finais">
     <p><strong>Local de coleta:</strong> ${solicitud.direccionServicio}</p>
-    <p><strong>Condições de pagamento:</strong> Prazo de faturamento 30 dias.</p>
-    <p><strong>Validade da Proposta:</strong> 05 dias.</p>
+    <p><strong>Condições de pagamento:</strong> ${propuesta.condicionesPago || 'Prazo de faturamento 30 dias'}.</p>
+    <p><strong>Validade da Proposta:</strong> ${propuesta.validadeDias || 5} dias.</p>
   </div>
 
   <p>Atenciosamente,</p>
@@ -126,7 +126,8 @@ export const generarPDFPropuesta = async (propuesta: any): Promise<Buffer> => {
   <div class="assinatura">
     <br>
     <div class="linha"></div>
-    <p>Departamento Comercial</p>
+    <p>${propuesta.nombreFirmante || (propuesta.usuario?.nombre || 'Departamento Comercial')}</p>
+    <p>${propuesta.cargoFirmante || 'Departamento Comercial'}</p>
     <p>Brooks Ambiental</p>
   </div>
 

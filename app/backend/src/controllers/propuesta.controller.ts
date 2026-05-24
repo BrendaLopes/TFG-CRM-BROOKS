@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware'
 import * as propuestaService from '../services/propuesta.service'
 import * as ordenService from '../services/ordenservicio.service'
 import { generarPDFPropuesta, generarPDFOrdenServicio } from '../services/pdf.service'
+import prisma from '../lib/prisma'
 
 export const crearPropuesta = async (req: AuthRequest, res: Response) => {
   try {
@@ -10,6 +11,18 @@ export const crearPropuesta = async (req: AuthRequest, res: Response) => {
     if (!cotizacionId) return res.status(400).json({ error: 'cotizacionId requerido' })
     const propuesta = await propuestaService.generarPropuesta(cotizacionId, req.usuario!.id)
     res.status(201).json(propuesta)
+  } catch (error: any) {
+    res.status(400).json({ error: error.message })
+  }
+}
+
+export const actualizarPropuesta = async (req: AuthRequest, res: Response) => {
+  try {
+    const propuesta = await propuestaService.actualizarPropuesta(
+      req.params.id as string,
+      req.body
+    )
+    res.json(propuesta)
   } catch (error: any) {
     res.status(400).json({ error: error.message })
   }
@@ -51,9 +64,6 @@ export const cerrarOportunidad = async (req: AuthRequest, res: Response) => {
   try {
     const { estado, motivoPerdida } = req.body
     const oportunidadId = req.params.id as string
-
-    const { PrismaClient } = require('@prisma/client')
-    const prisma = new PrismaClient()
 
     await prisma.oportunidad.update({
       where: { id: oportunidadId },

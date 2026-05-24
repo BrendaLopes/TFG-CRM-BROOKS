@@ -36,6 +36,19 @@ export const generarPropuesta = async (cotizacionId: string, usuarioId: string) 
   })
 }
 
+export const actualizarPropuesta = async (id: string, datos: Partial<{
+  condicionesPago: string
+  validadeDias: number
+  nombreFirmante: string
+  cargoFirmante: string
+  observaciones: string
+}>) => {
+  return prisma.propuesta.update({
+    where: { id },
+    data: datos
+  })
+}
+
 export const enviarPropuesta = async (propuestaId: string) => {
   const propuesta = await prisma.propuesta.update({
     where: { id: propuestaId },
@@ -52,17 +65,17 @@ export const obtenerPropuesta = async (id: string) => {
   return prisma.propuesta.findUnique({
     where: { id },
     include: {
-      oportunidad: { 
-        include: { 
-          cliente: { include: { contactos: true } } 
-        } 
+      oportunidad: {
+        include: {
+          cliente: { include: { contactos: true } }
+        }
       },
       cotizacion: {
         include: {
-          items: { 
-            include: { 
-              tarifaBase: { include: { residuo: true } } 
-            } 
+          items: {
+            include: {
+              tarifaBase: { include: { residuo: true } }
+            }
           },
           solicitud: true
         }
