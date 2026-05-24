@@ -6,6 +6,7 @@ import leadRoutes from './routes/lead.routes'
 import clienteRoutes from './routes/cliente.routes'
 import oportunidadRoutes from './routes/oportunidad.routes' 
 import cotizacionRoutes from './routes/cotizacion.routes'
+import propuestaRoutes from './routes/propuesta.routes'
 
 dotenv.config()
 
@@ -27,6 +28,7 @@ app.use('/api/leads', leadRoutes)
 app.use('/api/clientes', clienteRoutes)
 app.use('/api/oportunidades', oportunidadRoutes)
 app.use('/api/cotizaciones', cotizacionRoutes)
+app.use('/api/propuestas', propuestaRoutes)
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`)

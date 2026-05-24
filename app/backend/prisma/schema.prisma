@@ -80,6 +80,7 @@ model Usuario {
   leads         Lead[]
   oportunidades Oportunidad[]
   interacciones HistorialSeguimiento[]
+  propuestas    Propuesta[]
 }
 
 // ─── CLIENTES Y CONTACTOS ────────────────────────────
@@ -246,9 +247,15 @@ model Propuesta {
   estado          EstadoPropuesta @default(BORRADOR)
   fechaEmision    DateTime        @default(now())
   fechaEnvio      DateTime?
+  observaciones    String?  @db.Text
+  condicionesPago  String?
+  validadeDias     Int      @default(5)
+  nombreFirmante   String?
+  cargoFirmante    String?
 
   oportunidad Oportunidad @relation(fields: [oportunidadId], references: [id])
   cotizacion  Cotizacion  @relation(fields: [cotizacionId], references: [id])
+  usuario     Usuario?    @relation(fields: [usuarioId], references: [id])
 }
 
 // ─── ORDEN DE SERVICIO ───────────────────────────────
