@@ -239,3 +239,19 @@ Seed de datos reales (catálogo Brooks) cuando llegue el Excel con precios
 
 ### Próximo paso
 Pipeline Kanban — pantalla principal del sistema
+
+---
+
+## Pipeline Kanban (CU-03)
+
+**Estado:** ✅ Completado
+
+### Lo que funciona
+- Tablero Kanban con 8 columnas de estados
+- Tarjetas con nombre del cliente, tipo de contrato, responsable y prioridad
+- Contador de oportunidades activas y ganadas
+- Datos reales desde la API
+- Identidad visual Brooks — rojo corporativo, tipografía limpia
+
+### Próximo paso
+Formulario de registro de lead (CU-01) y ficha de oportunidad
