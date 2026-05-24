@@ -255,3 +255,18 @@ Pipeline Kanban — pantalla principal del sistema
 
 ### Próximo paso
 Formulario de registro de lead (CU-01) y ficha de oportunidad
+---
+
+## Seed de datos de prueba
+
+**Estado:** ✅ Completado
+
+### Lo que incluye
+- 2 usuarios: Ana Comercial (ADMINISTRADOR) y André Toro (COMERCIAL)
+- 8 clientes de distintos segmentos (alimenticio, industrial, farmacéutico, etc.)
+- 8 oportunidades distribuidas en los estados del pipeline:
+  LEAD, CUALIFICADA, PROPUESTA_EN_ELABORACION, PROPUESTA_ENVIADA,
+  EN_NEGOCIACION, PERDIDA — más la de Frigorífico Bela Vista en GANADA
+
+### Pendiente
+- Seed del catálogo real de residuos y tarifas (pendiente Excel de Brooks)
