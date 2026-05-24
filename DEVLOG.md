@@ -125,3 +125,95 @@ Solicitud de servicio + cotización asistida (CU-04 / CU-05 / CU-06)
 
 ### Próximo paso
 Generación de propuesta PDF (CU-07) y orden de servicio (CU-09/10)
+
+---
+
+## Evolución del modelo — campos editables en Propuesta
+
+**Estado:** ✅ Completado
+
+### Cambios respecto al diseño original (cap. 3)
+El modelo Propuesta del cap. 3 no incluía campos editables por el comercial.
+Durante la implementación se identificó la necesidad de los siguientes campos adicionales:
+
+**Modelo Propuesta — campos añadidos:**
+- observaciones: String? — texto libre para condiciones especiales
+- condicionesPago: String? — condiciones de pago específicas del cliente
+- validadeDias: Int (default 5) — validez de la propuesta en días
+- nombreFirmante: String? — nombre del comercial que firma
+- cargoFirmante: String? — cargo del firmante
+
+### Impacto en el TFG
+- ⚠️ El DER del cap. 3 (Figura 26) debe actualizarse con estos campos
+- ⚠️ El schema.prisma referenciado en el cap. 3 queda actualizado automáticamente
+
+### Justificación
+El comercial necesita personalizar cada propuesta con datos que no existen
+en el sistema (firmante, condiciones específicas). Esto refleja el proceso
+real de Brooks donde cada propuesta tiene particularidades comerciales.
+
+---
+
+## Cambios a reflejar en el Capítulo 3 del TFG
+
+### Modelo Propuesta — campos añadidos respecto al diseño original
+El DER del cap. 3 (Figura 26) debe actualizarse con estos campos:
+- observaciones: String? 
+- condicionesPago: String? (default: 'Prazo de faturamento 30 dias')
+- validadeDias: Int (default: 5)
+- nombreFirmante: String?
+- cargoFirmante: String?
+
+### Nuevo endpoint no documentado en cap. 3
+- PATCH /api/propuestas/:id — permite al comercial editar campos
+  de la propuesta antes de generar el PDF (condiciones pago,
+  validez, firmante, observaciones)
+
+### Relación nueva
+- Usuario → Propuesta (1 a muchos) — no estaba en el DER original
+
+### Justificación
+El proceso real de Brooks requiere que el comercial personalice
+condiciones de pago y validez propuesta a propuesta antes de enviar.
+
+---
+
+## PDF Propuesta — versión final (CU-07)
+
+**Estado:** ✅ Completado
+
+### Lo que funciona
+- Logo SVG real de Brooks incrustado inline
+- Sello ISO 9001
+- Estructura idéntica a la propuesta real de Brooks Ambiental
+- Campos dinámicos: condicionesPago, validadeDias, nombreFirmante, cargoFirmante
+- Flujo: crear propuesta → editar campos (PATCH) → generar PDF
+- Valor Transporte y Valor Destino Final calculados correctamente
+
+### Próximo paso
+CU-09/10 — Cerrar oportunidad y generar Orden de Servicio PDF
+
+---
+
+## Cierre de Oportunidad y Orden de Servicio (CU-09/10)
+
+**Estado:** ✅ Completado
+
+### Endpoints implementados
+- PATCH /api/propuestas/oportunidades/:id/cerrar — cierra oportunidad
+  como GANADA, PERDIDA o NO_VIABLE. Si GANADA genera OS automáticamente
+- GET /api/propuestas/ordenes/:id/pdf — exporta orden de servicio en PDF
+
+### Lo que funciona
+- Cierre registra fechaCierre automáticamente
+- Generación automática de OS al cerrar como GANADA
+- PDF con datos del cliente, servicio, frecuencia y unidad operacional
+- Todos los campos son dinámicos excepto el nombre de la empresa
+
+### Pendiente / mejora futura
+- unidadeOperacional está hardcodeada como 'Filial Palhoça'
+  Debería ser configurable por el administrador
+
+### Próximo paso
+Seed de datos reales (catálogo Brooks) cuando llegue el Excel con precios
++ arrancar con el frontend
