@@ -7,7 +7,7 @@ import api from '../services/api'
 const ESTADOS_LABELS: Record<string, string> = {
   LEAD: 'Lead',
   CUALIFICADA: 'Qualificada',
-  EN_ENTREVISTA_TECNICA: 'Entrevista Técnica',
+  EN_RECOGIDA_DE_DATOS: 'Recogida datos',
   PROPUESTA_EN_ELABORACION: 'Elaboração',
   PROPUESTA_ENVIADA: 'Prop. Enviada',
   EN_NEGOCIACION: 'Negociação',
@@ -17,7 +17,7 @@ const ESTADOS_LABELS: Record<string, string> = {
 }
 
 const ESTADOS_ORDEN = [
-  'LEAD', 'CUALIFICADA', 'EN_ENTREVISTA_TECNICA',
+  'LEAD', 'CUALIFICADA', 'EN_RECOGIDA_DE_DATOS',
   'PROPUESTA_EN_ELABORACION', 'PROPUESTA_ENVIADA',
   'EN_NEGOCIACION', 'GANADA'
 ]
@@ -42,6 +42,7 @@ export default function OportunidadPage() {
     tipo: 'ok' | 'error'
     texto: string
   } | null>(null)
+
   const [formBasicos, setFormBasicos] = useState({
     nombre: '', empresa: '', canal: '', responsavel: '',
   })
@@ -49,7 +50,9 @@ export default function OportunidadPage() {
     nombre: '', telefone: '', email: '',
   })
   const [formCualificacion, setFormCualificacion] = useState({
-    notasQualificacao: '', criteriosViabilidade: '',
+    viabilidade: 'viable' as 'viable' | 'no_viable',
+    prioridad: 'MEDIA',
+    motivoNoViable: '',
   })
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -110,8 +113,9 @@ export default function OportunidadPage() {
       })
     } else if (seccion === 'cualificacion') {
       setFormCualificacion({
-        notasQualificacao: op.notasQualificacao || '',
-        criteriosViabilidade: op.criteriosViabilidade || '',
+        viabilidade: op.estado === 'NO_VIABLE' ? 'no_viable' : 'viable',
+        prioridad: op.prioridad || 'MEDIA',
+        motivoNoViable: op.motivoNoViable || '',
       })
     }
     setEditandoSeccion(seccion)
@@ -128,45 +132,46 @@ export default function OportunidadPage() {
     setFeedbackSeccion(null)
     try {
       let payload: Record<string, any> = {}
+
       if (seccion === 'basicos') {
-        payload = { ...formBasicos }
+        payload = {
+          nombre: formBasicos.nombre,
+          empresa: formBasicos.empresa,
+          canal: formBasicos.canal,
+        }
       } else if (seccion === 'contacto') {
         payload = { contacto: { ...formContacto } }
       } else if (seccion === 'cualificacion') {
-        payload = { ...formCualificacion }
+        // Validar motivo si no viable
+        if (formCualificacion.viabilidade === 'no_viable' && !formCualificacion.motivoNoViable.trim()) {
+          setFeedbackSeccion({ seccion, tipo: 'error', texto: 'El motivo de descarte es obligatorio.' })
+          setGuardando(false)
+          return
+        }
+
+        // Actualizar prioridad / motivoNoViable
+        payload = {
+          ...(formCualificacion.viabilidade === 'viable' && { prioridad: formCualificacion.prioridad }),
+          ...(formCualificacion.viabilidade === 'no_viable' && { motivoNoViable: formCualificacion.motivoNoViable }),
+        }
+
+        // Cambiar estado según decisión
+        const nuevoEstado = formCualificacion.viabilidade === 'no_viable' ? 'NO_VIABLE' : 'CUALIFICADA'
+        const estadoActual = oportunidad.estado
+        if (estadoActual === 'LEAD' || formCualificacion.viabilidade === 'no_viable') {
+          await api.patch(`/oportunidades/${id}/estado`, {
+            estado: nuevoEstado,
+            ...(formCualificacion.viabilidade === 'no_viable' && {
+              motivoPerdida: formCualificacion.motivoNoViable
+            }),
+          })
+        }
       }
 
       await api.patch(`/oportunidades/${id}`, payload)
 
-      // Actualización local sin recargar
-      setOportunidad((prev: any) => {
-        if (seccion === 'basicos') {
-          return {
-            ...prev,
-            lead: { ...prev.lead, nombreEmpresa: formBasicos.nombre, canalEntrada: formBasicos.canal },
-            cliente: { ...prev.cliente, nombre: formBasicos.empresa },
-            usuario: { ...prev.usuario, nombre: formBasicos.responsavel },
-          }
-        }
-        if (seccion === 'contacto') {
-          const contactos = prev.cliente?.contactos?.length ? [...prev.cliente.contactos] : [{}]
-          contactos[0] = {
-            ...contactos[0],
-            nombre: formContacto.nombre,
-            telefono: formContacto.telefone,
-            email: formContacto.email,
-          }
-          return { ...prev, cliente: { ...prev.cliente, contactos } }
-        }
-        if (seccion === 'cualificacion') {
-          return {
-            ...prev,
-            notasQualificacao: formCualificacion.notasQualificacao,
-            criteriosViabilidade: formCualificacion.criteriosViabilidade,
-          }
-        }
-        return prev
-      })
+      // Recargar para reflejar cambios de estado y datos
+      await cargar()
 
       setEditandoSeccion(null)
       setFeedbackSeccion({ seccion, tipo: 'ok', texto: '✓ Guardado' })
@@ -201,11 +206,9 @@ export default function OportunidadPage() {
   const estadoActualIdx = ESTADOS_ORDEN.indexOf(op.estado)
   const proximoEstado = ESTADOS_ORDEN[estadoActualIdx + 1]
 
-  // Clases compartidas para modo edición
   const claseInput = 'w-full border border-blue-300 bg-blue-50/30 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-400'
   const claseLabel = 'block text-xs text-gray-400 mb-1'
 
-  // Botones de sección compartidos (helper)
   const CabeceraSeccion = ({
     titulo,
     seccion,
@@ -445,25 +448,80 @@ export default function OportunidadPage() {
               <CabeceraSeccion titulo="Qualificação" seccion="cualificacion" />
 
               {editandoSeccion === 'cualificacion' ? (
-                <div className="bg-blue-50/20 rounded-lg p-3 border border-blue-100 space-y-3">
+                <div className="bg-blue-50/20 rounded-lg p-3 border border-blue-100 space-y-4">
+
+                  {/* Viabilidade */}
                   <div>
-                    <label className={claseLabel}>Notas de qualificação</label>
-                    <textarea
-                      value={formCualificacion.notasQualificacao}
-                      onChange={(e) => setFormCualificacion({ ...formCualificacion, notasQualificacao: e.target.value })}
-                      rows={4}
-                      className={`${claseInput} resize-none`}
-                    />
+                    <label className={claseLabel}>Viabilidade</label>
+                    <div className="flex gap-6 mt-1">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="viabilidade"
+                          value="viable"
+                          checked={formCualificacion.viabilidade === 'viable'}
+                          onChange={() => setFormCualificacion({
+                            ...formCualificacion,
+                            viabilidade: 'viable',
+                            motivoNoViable: ''
+                          })}
+                          className="accent-[#b61b24]"
+                        />
+                        <span className="text-sm text-gray-700">Viable</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="viabilidade"
+                          value="no_viable"
+                          checked={formCualificacion.viabilidade === 'no_viable'}
+                          onChange={() => setFormCualificacion({
+                            ...formCualificacion,
+                            viabilidade: 'no_viable'
+                          })}
+                          className="accent-[#b61b24]"
+                        />
+                        <span className="text-sm text-gray-700">No viable</span>
+                      </label>
+                    </div>
                   </div>
-                  <div>
-                    <label className={claseLabel}>Critérios de viabilidade</label>
-                    <textarea
-                      value={formCualificacion.criteriosViabilidade}
-                      onChange={(e) => setFormCualificacion({ ...formCualificacion, criteriosViabilidade: e.target.value })}
-                      rows={3}
-                      className={`${claseInput} resize-none`}
-                    />
-                  </div>
+
+                  {/* Prioridade — solo si viable */}
+                  {formCualificacion.viabilidade === 'viable' && (
+                    <div>
+                      <label className={claseLabel}>Prioridade</label>
+                      <select
+                        value={formCualificacion.prioridad}
+                        onChange={(e) => setFormCualificacion({
+                          ...formCualificacion,
+                          prioridad: e.target.value
+                        })}
+                        className={claseInput}
+                      >
+                        <option value="ALTA">Alta</option>
+                        <option value="MEDIA">Média</option>
+                        <option value="BAJA">Baixa</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Motivo — solo si no viable */}
+                  {formCualificacion.viabilidade === 'no_viable' && (
+                    <div>
+                      <label className={claseLabel}>Motivo de descarte *</label>
+                      <textarea
+                        value={formCualificacion.motivoNoViable}
+                        onChange={(e) => setFormCualificacion({
+                          ...formCualificacion,
+                          motivoNoViable: e.target.value
+                        })}
+                        rows={3}
+                        placeholder="Descreva por que este lead não é viável..."
+                        className={`${claseInput} resize-none`}
+                      />
+                    </div>
+                  )}
+
                   {feedbackSeccion?.seccion === 'cualificacion' && feedbackSeccion.tipo === 'error' && (
                     <p className="text-xs text-red-600">{feedbackSeccion.texto}</p>
                   )}
@@ -471,25 +529,39 @@ export default function OportunidadPage() {
                 </div>
               ) : (
                 <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="text-xs text-gray-400">Notas de qualificação</p>
-                    {op.notasQualificacao
-                      ? <p className="text-gray-700 mt-0.5 whitespace-pre-wrap">{op.notasQualificacao}</p>
-                      : <p className="text-gray-300 italic mt-0.5">Sin notas</p>
-                    }
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      op.estado === 'NO_VIABLE'
+                        ? 'bg-gray-100 text-gray-600'
+                        : op.estado === 'LEAD'
+                        ? 'bg-yellow-50 text-yellow-600'
+                        : 'bg-green-100 text-green-700'
+                    }`}>
+                      {op.estado === 'NO_VIABLE' ? 'No viable'
+                        : op.estado === 'LEAD' ? 'Pendente de qualificação'
+                        : 'Viable'}
+                    </span>
+                    {op.prioridad && op.estado !== 'NO_VIABLE' && (
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        op.prioridad === 'ALTA' ? 'bg-red-100 text-red-700' :
+                        op.prioridad === 'MEDIA' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-500'
+                      }`}>
+                        {op.prioridad}
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Critérios de viabilidade</p>
-                    {op.criteriosViabilidade
-                      ? <p className="text-gray-700 mt-0.5 whitespace-pre-wrap">{op.criteriosViabilidade}</p>
-                      : <p className="text-gray-300 italic mt-0.5">Sin criterios</p>
-                    }
-                  </div>
+                  {op.motivoNoViable && (
+                    <div>
+                      <p className="text-xs text-gray-400">Motivo de descarte</p>
+                      <p className="text-gray-700 mt-0.5">{op.motivoNoViable}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Datos del servicio — sin cambios */}
+            {/* Datos del servicio */}
             {op.solicitudServicio && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
                 <h2 className="text-sm font-semibold text-gray-700 mb-4">Dados do serviço</h2>
@@ -516,7 +588,7 @@ export default function OportunidadPage() {
               </div>
             )}
 
-            {/* Historial — sin cambios */}
+            {/* Historial */}
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-gray-700">Histórico de interações</h2>
@@ -548,7 +620,7 @@ export default function OportunidadPage() {
             </div>
           </div>
 
-          {/* Columna lateral — sin cambios */}
+          {/* Columna lateral */}
           <div className="space-y-4">
 
             {/* Resumen financiero */}
@@ -638,7 +710,7 @@ export default function OportunidadPage() {
         </div>
       </div>
 
-      {/* Modal interacción — sin cambios */}
+      {/* Modal interacción */}
       {modalInteraccion && (
         <Modal titulo="Registrar interação" onClose={() => setModalInteraccion(false)} ancho="max-w-lg">
           <form onSubmit={handleRegistrarInteraccion} className="space-y-4">

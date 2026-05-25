@@ -73,16 +73,15 @@ export const registrarInteraccion = async (req: AuthRequest, res: Response) => {
 export const actualizarOportunidad = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string
-    const { nombre, empresa, canal, responsavel, contacto, notasQualificacao, criteriosViabilidade } = req.body
+    const { nombre, empresa, canal, contacto, prioridad, motivoNoViable } = req.body
 
     const oportunidad = await oportunidadService.actualizarOportunidad(id, {
       nombre,
       empresa,
       canal,
-      responsavel,
       contacto,
-      notasQualificacao,
-      criteriosViabilidade,
+      prioridad,
+      motivoNoViable,
     })
 
     res.json(oportunidad)

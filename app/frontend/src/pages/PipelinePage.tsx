@@ -100,7 +100,9 @@ function TarjetaDraggable({
       <p className="text-sm font-semibold text-gray-800 leading-tight">
         {op.cliente?.nombre || op.lead?.nombreEmpresa}
       </p>
-      <p className="text-xs text-gray-400 mt-1">{op.tipo || '—'}</p>
+      <p className="text-xs text-gray-400 mt-1">
+        {op.estado === 'LEAD' ? 'Pendente qualificação' : op.tipo || '—'}
+      </p>
       <div className="flex items-center justify-between mt-2">
         <span className="text-xs text-gray-400">{op.usuario?.nombre}</span>
         {op.prioridad === 'ALTA' && (
@@ -185,27 +187,56 @@ export default function PipelinePage() {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleSubmitLead = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
-    setError('')
-    try {
-      const res = await api.post('/leads', form)
-      if (res.data.posibleDuplicado) {
-        setDuplicado(true)
-        setSubmitting(false)
-        return
-      }
-      setModalLead(false)
-      setForm(FORM_INICIAL)
-      setDuplicado(false)
-      cargarPipeline()
-    } catch {
-      setError('Erro ao registrar lead.')
-    } finally {
+const handleSubmitLead = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setSubmitting(true)
+  setError('')
+  try {
+    const resLead = await api.post('/leads', {
+      nombreEmpresa: form.nombreEmpresa,
+      canalEntrada: form.canalEntrada,
+      descripcionInicial: form.descripcionInicial,
+    })
+
+    if (resLead.data.posibleDuplicado) {
+      setDuplicado(true)
       setSubmitting(false)
+      return
     }
+
+    const lead = resLead.data.lead
+
+    const resCliente = await api.post('/clientes', {
+      nombre: form.nombreEmpresa,
+      documentoFiscal: '00.000.000/0000-00',
+      ...(form.municipio && { direccion: form.municipio }),
+    })
+    const cliente = resCliente.data
+
+    if (form.contactoNombre || form.contactoTelefono || form.contactoEmail) {
+      await api.post(`/clientes/${cliente.id}/contactos`, {
+        nombre: form.contactoNombre || form.nombreEmpresa,
+        telefono: form.contactoTelefono || '',
+        email: form.contactoEmail || '',
+      })
+    }
+
+    await api.post('/oportunidades', {
+      leadId: lead.id,
+      clienteId: cliente.id,
+      tipo: 'RECORRENTE',
+    })
+
+    setModalLead(false)
+    setForm(FORM_INICIAL)
+    setDuplicado(false)
+    cargarPipeline()
+  } catch {
+    setError('Erro ao registrar lead.')
+  } finally {
+    setSubmitting(false)
   }
+}
 
   const handleCerrarModal = () => {
     setModalLead(false)

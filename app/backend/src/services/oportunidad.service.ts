@@ -69,21 +69,17 @@ export const actualizarOportunidad = async (id: string, datos: {
   nombre?: string
   empresa?: string
   canal?: string
-  responsavel?: string
   contacto?: { nombre?: string; telefone?: string; email?: string }
-  notasQualificacao?: string
-  criteriosViabilidade?: string
+  prioridad?: 'ALTA' | 'MEDIA' | 'BAJA'
+  motivoNoViable?: string
 }) => {
   const ops: Promise<any>[] = []
 
-  // Actualizar lead (nombre, canal)
   if (datos.nombre || datos.canal) {
-    const oportunidad = await prisma.oportunidad.findUnique({
-      where: { id }, select: { leadId: true }
-    })
-    if (oportunidad?.leadId) {
+    const op = await prisma.oportunidad.findUnique({ where: { id }, select: { leadId: true } })
+    if (op?.leadId) {
       ops.push(prisma.lead.update({
-        where: { id: oportunidad.leadId },
+        where: { id: op.leadId },
         data: {
           ...(datos.nombre && { nombreEmpresa: datos.nombre }),
           ...(datos.canal && { canalEntrada: datos.canal as any }),
@@ -92,28 +88,17 @@ export const actualizarOportunidad = async (id: string, datos: {
     }
   }
 
-  // Actualizar cliente (empresa)
   if (datos.empresa) {
-    const oportunidad = await prisma.oportunidad.findUnique({
-      where: { id }, select: { clienteId: true }
-    })
-    if (oportunidad?.clienteId) {
-      ops.push(prisma.cliente.update({
-        where: { id: oportunidad.clienteId },
-        data: { nombre: datos.empresa }
-      }))
+    const op = await prisma.oportunidad.findUnique({ where: { id }, select: { clienteId: true } })
+    if (op?.clienteId) {
+      ops.push(prisma.cliente.update({ where: { id: op.clienteId }, data: { nombre: datos.empresa } }))
     }
   }
 
-  // Actualizar contacto principal
   if (datos.contacto) {
-    const oportunidad = await prisma.oportunidad.findUnique({
-      where: { id }, select: { clienteId: true }
-    })
-    if (oportunidad?.clienteId) {
-      const contactoExistente = await prisma.contacto.findFirst({
-        where: { clienteId: oportunidad.clienteId }
-      })
+    const op = await prisma.oportunidad.findUnique({ where: { id }, select: { clienteId: true } })
+    if (op?.clienteId) {
+      const contactoExistente = await prisma.contacto.findFirst({ where: { clienteId: op.clienteId } })
       if (contactoExistente) {
         ops.push(prisma.contacto.update({
           where: { id: contactoExistente.id },
@@ -127,18 +112,15 @@ export const actualizarOportunidad = async (id: string, datos: {
     }
   }
 
-  // Actualizar oportunidad (notas, criterios)
   const dataOp: any = {}
-  if (datos.notasQualificacao !== undefined) dataOp.notasQualificacao = datos.notasQualificacao
-  if (datos.criteriosViabilidade !== undefined) dataOp.criteriosViabilidade = datos.criteriosViabilidade
-
+  if (datos.prioridad) dataOp.prioridad = datos.prioridad
+  if (datos.motivoNoViable !== undefined) dataOp.motivoNoViable = datos.motivoNoViable
   if (Object.keys(dataOp).length > 0) {
     ops.push(prisma.oportunidad.update({ where: { id }, data: dataOp }))
   }
 
   await Promise.all(ops)
 
-  // Devolver oportunidad actualizada completa
   return prisma.oportunidad.findUnique({
     where: { id },
     include: {

@@ -308,3 +308,14 @@ Formulario de registro de lead (CU-01) y ficha de oportunidad
   quedan cubiertos por la edición inline
 - La matriz TRANSICIONES_VALIDAS implementa exactamente 
   el diagrama de estados de la oportunidad (§3.2.2)
+
+  ## [fecha] — Fix registro lead + tarjeta pipeline
+
+- handleSubmitLead encadena POST /leads → POST /clientes → 
+  POST /clientes/:id/contactos → POST /oportunidades
+  para que el lead aparezca inmediatamente en el pipeline
+- Tarjeta en estado LEAD muestra "Pendente qualificação" 
+  en lugar del tipo de contrato (que aún no se conoce)
+
+### Impacto cap. 3
+- CU-01 queda completamente cubierto end-to-end

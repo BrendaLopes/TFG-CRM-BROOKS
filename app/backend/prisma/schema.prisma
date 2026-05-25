@@ -140,6 +140,7 @@ model Oportunidad {
   motivoPerdida  String?
   fechaCreacion  DateTime          @default(now())
   fechaCierre    DateTime?
+  motivoNoViable  String?
 
   lead              Lead                   @relation(fields: [leadId], references: [id])
   cliente           Cliente                @relation(fields: [clienteId], references: [id])
