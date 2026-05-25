@@ -56,6 +56,32 @@ export default function OportunidadPage() {
   })
   // ────────────────────────────────────────────────────────────────────────────
 
+  // ── Cotización ───────────────────────────────────────────────────────────────
+  const [residuos, setResiduos] = useState<any[]>([])
+  const [editandoServicio, setEditandoServicio] = useState(false)
+  const [formServicio, setFormServicio] = useState({
+    tipoServicio: 'COLETA_PROGRAMADA',
+    frecuenciaServicio: 'SEMANAL',
+    direccionServicio: '',
+    observaciones: '',
+    restriccionesHorario: '',
+  })
+  const [itemsServicio, setItemsServicio] = useState([
+    { residuoId: '', cantidadEstimada: '', unidadMedida: 'KG', descripcionDetallada: '' },
+  ])
+  const [guardandoServicio, setGuardandoServicio] = useState(false)
+  const [errorServicio, setErrorServicio] = useState<string | null>(null)
+  const [generandoCotizacion, setGenerandoCotizacion] = useState(false)
+  const [errorCotizacion, setErrorCotizacion] = useState<string | null>(null)
+  const [ajustesItems, setAjustesItems] = useState<Record<string, {
+    precioFinal: string
+    justificacion: string
+    guardando: boolean
+    feedback: { tipo: 'ok' | 'error'; texto: string } | null
+  }>>({})
+  const [generandoPropuesta, setGenerandoPropuesta] = useState(false)
+  // ────────────────────────────────────────────────────────────────────────────
+
   const cargar = () => {
     api.get(`/oportunidades/${id}`)
       .then((res) => {
@@ -69,6 +95,27 @@ export default function OportunidadPage() {
   }
 
   useEffect(() => { cargar() }, [id])
+
+  useEffect(() => {
+    api.get('/cotizaciones/residuos').then((res) => setResiduos(res.data)).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const items = oportunidad?.solicitudServicio?.cotizacion?.items
+    if (!items) return
+    setAjustesItems((prev) => {
+      const next: typeof prev = {}
+      items.forEach((item: any) => {
+        next[item.id] = prev[item.id] ?? {
+          precioFinal: String(item.precioFinal ?? item.precioSugerido ?? ''),
+          justificacion: item.justificacion || '',
+          guardando: false,
+          feedback: null,
+        }
+      })
+      return next
+    })
+  }, [oportunidad])
 
   const handleRegistrarInteraccion = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -171,7 +218,7 @@ export default function OportunidadPage() {
       await api.patch(`/oportunidades/${id}`, payload)
 
       // Recargar para reflejar cambios de estado y datos
-      await cargar()
+      cargar()
 
       setEditandoSeccion(null)
       setFeedbackSeccion({ seccion, tipo: 'ok', texto: '✓ Guardado' })
@@ -180,6 +227,147 @@ export default function OportunidadPage() {
       setFeedbackSeccion({ seccion, tipo: 'error', texto: 'Error al guardar. Intenta de nuevo.' })
     } finally {
       setGuardando(false)
+    }
+  }
+
+  // ── Cotización handlers ─────────────────────────────────────────────────────
+
+  const agregarItemServicio = () =>
+    setItemsServicio((prev) => [
+      ...prev,
+      { residuoId: '', cantidadEstimada: '', unidadMedida: 'KG', descripcionDetallada: '' },
+    ])
+
+  const eliminarItemServicio = (idx: number) =>
+    setItemsServicio((prev) => prev.filter((_, i) => i !== idx))
+
+  const actualizarItemServicio = (idx: number, campo: string, valor: string) =>
+    setItemsServicio((prev) =>
+      prev.map((item, i) => (i === idx ? { ...item, [campo]: valor } : item))
+    )
+
+  const iniciarEdicionServicio = () => {
+    const ss = oportunidad?.solicitudServicio
+    setFormServicio({
+      tipoServicio: ss?.tipoServicio || 'COLETA_PROGRAMADA',
+      frecuenciaServicio: ss?.frecuenciaServicio || 'SEMANAL',
+      direccionServicio: ss?.direccionServicio || '',
+      observaciones: ss?.observaciones || '',
+      restriccionesHorario: ss?.restriccionesHorario || '',
+    })
+    setItemsServicio(
+      ss?.items?.map((i: any) => ({
+        residuoId: i.residuoId || '',
+        cantidadEstimada: String(i.cantidadEstimada || ''),
+        unidadMedida: i.unidadMedida || 'KG',
+        descripcionDetallada: i.descripcionDetallada || '',
+      })) ?? [{ residuoId: '', cantidadEstimada: '', unidadMedida: 'KG', descripcionDetallada: '' }]
+    )
+    setEditandoServicio(true)
+    setErrorServicio(null)
+  }
+
+const handleGuardarServicio = async () => {
+  if (!formServicio.direccionServicio.trim()) {
+    setErrorServicio('O endereço de coleta é obrigatório.')
+    return
+  }
+  if (itemsServicio.some((i) => !i.residuoId)) {
+    setErrorServicio('Todos os ítems precisam ter um resíduo selecionado.')
+    return
+  }
+  setGuardandoServicio(true)
+  setErrorServicio(null)
+  try {
+    const solicitudExistente = oportunidad?.solicitudServicio?.id
+
+    if (solicitudExistente) {
+      // Actualizar solicitud existente
+      await api.put(`/cotizaciones/solicitudes/${solicitudExistente}`, {
+        ...formServicio,
+        items: itemsServicio.map((i) => ({
+          ...i,
+          cantidadEstimada: Number(i.cantidadEstimada),
+        })),
+      })
+    } else {
+      // Crear nueva solicitud
+      await api.post('/cotizaciones/solicitudes', {
+        oportunidadId: id,
+        ...formServicio,
+        items: itemsServicio.map((i) => ({
+          ...i,
+          cantidadEstimada: Number(i.cantidadEstimada),
+        })),
+      })
+      await api.patch(`/oportunidades/${id}/estado`, { estado: 'PROPUESTA_EN_ELABORACION' })
+    }
+
+    cargar()
+    setEditandoServicio(false)
+  } catch {
+    setErrorServicio('Error al guardar. Intenta de nuevo.')
+  } finally {
+    setGuardandoServicio(false)
+  }
+}
+
+  const handleGenerarCotizacion = async () => {
+    const solicitudId = oportunidad?.solicitudServicio?.id
+    if (!solicitudId) return
+    setGenerandoCotizacion(true)
+    setErrorCotizacion(null)
+    try {
+      await api.post(`/cotizaciones/solicitudes/${solicitudId}/cotizar`)
+      cargar()
+    } catch {
+      setErrorCotizacion('Error al generar la cotización. Intenta de nuevo.')
+    } finally {
+      setGenerandoCotizacion(false)
+    }
+  }
+
+  const handleGuardarAjusteItem = async (cotizacionId: string, itemId: string) => {
+    const ajuste = ajustesItems[itemId]
+    if (!ajuste) return
+    const item = oportunidad?.solicitudServicio?.cotizacion?.items?.find((i: any) => i.id === itemId)
+    if (Number(ajuste.precioFinal) !== Number(item?.precioSugerido) && !ajuste.justificacion.trim()) {
+      setAjustesItems((prev) => ({
+        ...prev,
+        [itemId]: { ...prev[itemId], feedback: { tipo: 'error', texto: 'La justificación es obligatoria al modificar el precio.' } },
+      }))
+      return
+    }
+    setAjustesItems((prev) => ({ ...prev, [itemId]: { ...prev[itemId], guardando: true, feedback: null } }))
+    try {
+      await api.patch(`/cotizaciones/${cotizacionId}/items/${itemId}/precio`, {
+        precioFinal: Number(ajuste.precioFinal),
+        justificacion: ajuste.justificacion,
+      })
+      setAjustesItems((prev) => ({
+        ...prev,
+        [itemId]: { ...prev[itemId], guardando: false, feedback: { tipo: 'ok', texto: '✓ Guardado' } },
+      }))
+      cargar()
+    } catch {
+      setAjustesItems((prev) => ({
+        ...prev,
+        [itemId]: { ...prev[itemId], guardando: false, feedback: { tipo: 'error', texto: 'Error al guardar' } },
+      }))
+    }
+  }
+
+  const handleGenerarPropuesta = async () => {
+    const cotizacionId = oportunidad?.solicitudServicio?.cotizacion?.id
+    if (!cotizacionId) return
+    setGenerandoPropuesta(true)
+    try {
+      await api.post('/propuestas', { cotizacionId })
+      cargar()
+    } catch {
+      alert('Error al generar la propuesta. Intenta de nuevo.')
+    } finally {
+      setGenerandoPropuesta(false)
     }
   }
 
@@ -205,6 +393,14 @@ export default function OportunidadPage() {
   const op = oportunidad
   const estadoActualIdx = ESTADOS_ORDEN.indexOf(op.estado)
   const proximoEstado = ESTADOS_ORDEN[estadoActualIdx + 1]
+
+  const cotizacion = op.solicitudServicio?.cotizacion
+  const totalSugerido = cotizacion?.items?.reduce(
+    (s: number, i: any) => s + Number(i.precioSugerido || 0), 0
+  ) ?? 0
+  const totalFinalLocal = cotizacion?.items?.reduce(
+    (s: number, i: any) => s + Number(ajustesItems[i.id]?.precioFinal ?? i.precioFinal ?? i.precioSugerido ?? 0), 0
+  ) ?? 0
 
   const claseInput = 'w-full border border-blue-300 bg-blue-50/30 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-400'
   const claseLabel = 'block text-xs text-gray-400 mb-1'
@@ -561,8 +757,357 @@ export default function OportunidadPage() {
               )}
             </div>
 
-            {/* Datos del servicio */}
-            {op.solicitudServicio && (
+            {/* ── SECCIÓN A: Datos del servicio (solo en EN_RECOGIDA_DE_DATOS) ── */}
+            {['EN_RECOGIDA_DE_DATOS', 'PROPUESTA_EN_ELABORACION', 'PROPUESTA_ENVIADA', 'EN_NEGOCIACION', 'GANADA', 'PERDIDA'].includes(op.estado) && (
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-700">Dados do serviço</h2>
+                  {op.solicitudServicio && !editandoServicio && (
+                    <button
+                      onClick={iniciarEdicionServicio}
+                      className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      Editar
+                    </button>
+                  )}
+                </div>
+
+                {op.solicitudServicio && !editandoServicio ? (
+                  /* Modo lectura */
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className={claseLabel}>Tipo de serviço</p>
+                      <p className="text-gray-700">{op.solicitudServicio.tipoServicio}</p>
+                    </div>
+                    <div>
+                      <p className={claseLabel}>Frequência</p>
+                      <p className="text-gray-700">{op.solicitudServicio.frecuenciaServicio}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className={claseLabel}>Endereço de coleta</p>
+                      <p className="text-gray-700">{op.solicitudServicio.direccionServicio}</p>
+                    </div>
+                    {op.solicitudServicio.observaciones && (
+                      <div className="col-span-2">
+                        <p className={claseLabel}>Observações</p>
+                        <p className="text-gray-700">{op.solicitudServicio.observaciones}</p>
+                      </div>
+                    )}
+                    {op.solicitudServicio.items?.length > 0 && (
+                      <div className="col-span-2 mt-1">
+                        <p className={claseLabel + ' mb-2'}>Resíduos</p>
+                        <div className="space-y-1">
+                          {op.solicitudServicio.items.map((item: any, idx: number) => (
+                            <div key={idx} className="flex gap-2 text-xs text-gray-600 bg-gray-50 rounded px-3 py-1.5">
+                              <span className="font-medium">
+                                {residuos.find((r) => r.id === item.residuoId)?.nombre || item.residuoId}
+                              </span>
+                              <span className="text-gray-300">·</span>
+                              <span>{item.cantidadEstimada} {item.unidadMedida}</span>
+                              {item.descripcionDetallada && (
+                                <span className="text-gray-400">— {item.descripcionDetallada}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Modo formulario */
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={claseLabel}>Tipo de serviço *</label>
+                        <select
+                          value={formServicio.tipoServicio}
+                          onChange={(e) => setFormServicio({ ...formServicio, tipoServicio: e.target.value })}
+                          className={claseInput}
+                        >
+                          <option value="COLETA_PROGRAMADA">Coleta Programada</option>
+                          <option value="COLETA_AVULSA">Coleta Avulsa</option>
+                          <option value="GERENCIAMENTO">Gerenciamento</option>
+                          <option value="LOGISTICA_REVERSA">Logística Reversa</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className={claseLabel}>Frequência *</label>
+                        <select
+                          value={formServicio.frecuenciaServicio}
+                          onChange={(e) => setFormServicio({ ...formServicio, frecuenciaServicio: e.target.value })}
+                          className={claseInput}
+                        >
+                          <option value="SEMANAL">Semanal</option>
+                          <option value="QUINZENAL">Quinzenal</option>
+                          <option value="MENSAL">Mensal</option>
+                          <option value="BIMESTRAL">Bimestral</option>
+                          <option value="SOB_DEMANDA">Sob demanda</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className={claseLabel}>Endereço de coleta *</label>
+                        <input
+                          value={formServicio.direccionServicio}
+                          onChange={(e) => setFormServicio({ ...formServicio, direccionServicio: e.target.value })}
+                          placeholder="Rua, número, bairro, cidade..."
+                          className={claseInput}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className={claseLabel}>Observações</label>
+                        <textarea
+                          value={formServicio.observaciones}
+                          onChange={(e) => setFormServicio({ ...formServicio, observaciones: e.target.value })}
+                          rows={2}
+                          className={`${claseInput} resize-none`}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className={claseLabel}>Restrições de horário</label>
+                        <input
+                          value={formServicio.restriccionesHorario}
+                          onChange={(e) => setFormServicio({ ...formServicio, restriccionesHorario: e.target.value })}
+                          placeholder="Ex: somente 08h–18h, segunda a sexta"
+                          className={claseInput}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ítems de resíduos */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-gray-600">Resíduos do serviço</p>
+                        <button
+                          type="button"
+                          onClick={agregarItemServicio}
+                          className="text-xs text-[#b61b24] hover:underline"
+                        >
+                          + Adicionar resíduo
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {itemsServicio.map((item, idx) => (
+                          <div key={idx} className="grid grid-cols-12 gap-2 items-end bg-gray-50 rounded p-2">
+                            <div className="col-span-4">
+                              <label className={claseLabel}>Resíduo *</label>
+                              <select
+                                value={item.residuoId}
+                                onChange={(e) => actualizarItemServicio(idx, 'residuoId', e.target.value)}
+                                className={claseInput}
+                              >
+                                <option value="">Selecionar...</option>
+                                {residuos.map((r: any) => (
+                                  <option key={r.id} value={r.id}>{r.nombre}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-span-2">
+                              <label className={claseLabel}>Qtd.</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.cantidadEstimada}
+                                onChange={(e) => actualizarItemServicio(idx, 'cantidadEstimada', e.target.value)}
+                                className={claseInput}
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <label className={claseLabel}>Unidade</label>
+                              <select
+                                value={item.unidadMedida}
+                                onChange={(e) => actualizarItemServicio(idx, 'unidadMedida', e.target.value)}
+                                className={claseInput}
+                              >
+                                <option value="KG">kg</option>
+                                <option value="M3">m³</option>
+                                <option value="UNIDAD">und.</option>
+                                <option value="CONTENEDOR">cont.</option>
+                              </select>
+                            </div>
+                            <div className="col-span-3">
+                              <label className={claseLabel}>Descrição</label>
+                              <input
+                                value={item.descripcionDetallada}
+                                onChange={(e) => actualizarItemServicio(idx, 'descripcionDetallada', e.target.value)}
+                                className={claseInput}
+                              />
+                            </div>
+                            <div className="col-span-1 flex justify-center pb-1">
+                              {itemsServicio.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => eliminarItemServicio(idx)}
+                                  className="text-gray-300 hover:text-red-500 text-xl leading-none transition-colors"
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {errorServicio && <p className="text-xs text-red-600">{errorServicio}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={handleGuardarServicio}
+                        disabled={guardandoServicio}
+                        className="bg-[#b61b24] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#9a1720] disabled:opacity-50 transition-colors"
+                      >
+                        {guardandoServicio ? 'Guardando...' : 'Guardar e avançar →'}
+                      </button>
+                      {op.solicitudServicio && (
+                        <button
+                          onClick={() => setEditandoServicio(false)}
+                          className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── SECCIÓN B: Cotización (solo en PROPUESTA_EN_ELABORACION) ── */}
+            {op.estado === 'PROPUESTA_EN_ELABORACION' && op.solicitudServicio && (
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                <h2 className="text-sm font-semibold text-gray-700 mb-4">Cotização</h2>
+
+                {!cotizacion ? (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-3">Nenhuma cotização gerada ainda.</p>
+                    <button
+                      onClick={handleGenerarCotizacion}
+                      disabled={generandoCotizacion}
+                      className="bg-[#b61b24] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#9a1720] disabled:opacity-50 flex items-center gap-2 transition-colors"
+                    >
+                      {generandoCotizacion && (
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+                      )}
+                      {generandoCotizacion ? 'Calculando...' : 'Gerar cotização'}
+                    </button>
+                    {errorCotizacion && <p className="text-xs text-red-600 mt-2">{errorCotizacion}</p>}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Tabla de ítems */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100">
+                            <th className="text-xs font-medium text-gray-500 text-left pb-2">Resíduo</th>
+                            <th className="text-xs font-medium text-gray-500 text-right pb-2">Qtd.</th>
+                            <th className="text-xs font-medium text-gray-500 text-left pb-2 pl-3">Unid.</th>
+                            <th className="text-xs font-medium text-gray-500 text-right pb-2">Preço sug.</th>
+                            <th className="text-xs font-medium text-gray-500 text-right pb-2 pl-3">Preço final</th>
+                            <th className="text-xs font-medium text-gray-500 text-left pb-2 pl-3">Ajuste</th>
+                            <th className="pb-2 w-16" />
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {cotizacion.items?.map((item: any) => {
+                            const ajuste = ajustesItems[item.id]
+                            const precioModificado = ajuste
+                              ? Number(ajuste.precioFinal) !== Number(item.precioSugerido)
+                              : false
+                            return (
+                              <tr key={item.id}>
+                                <td className="py-2.5 text-gray-700 pr-3">
+                                  {residuos.find((r) => r.id === item.residuoId)?.nombre || item.residuoId}
+                                </td>
+                                <td className="py-2.5 text-right text-gray-600">{item.cantidadEstimada}</td>
+                                <td className="py-2.5 text-gray-500 pl-3">{item.unidadMedida}</td>
+                                <td className="py-2.5 text-right text-gray-400 tabular-nums">
+                                  R$ {Number(item.precioSugerido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-2.5 pl-3">
+                                  <input
+                                    type="number"
+                                    value={ajuste?.precioFinal ?? ''}
+                                    onChange={(e) =>
+                                      setAjustesItems((prev) => ({
+                                        ...prev,
+                                        [item.id]: { ...prev[item.id], precioFinal: e.target.value },
+                                      }))
+                                    }
+                                    className="w-24 border border-blue-300 bg-blue-50/30 rounded px-2 py-1 text-sm text-right focus:outline-none focus:border-blue-400"
+                                  />
+                                </td>
+                                <td className="py-2.5 pl-3">
+                                  {precioModificado && (
+                                    <input
+                                      value={ajuste?.justificacion ?? ''}
+                                      onChange={(e) =>
+                                        setAjustesItems((prev) => ({
+                                          ...prev,
+                                          [item.id]: { ...prev[item.id], justificacion: e.target.value },
+                                        }))
+                                      }
+                                      placeholder="Justificação *"
+                                      className="w-full border border-orange-200 bg-orange-50/30 rounded px-2 py-1 text-xs focus:outline-none focus:border-orange-300"
+                                    />
+                                  )}
+                                  {ajuste?.feedback && (
+                                    <p className={`text-xs mt-0.5 ${ajuste.feedback.tipo === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
+                                      {ajuste.feedback.texto}
+                                    </p>
+                                  )}
+                                </td>
+                                <td className="py-2.5 text-right">
+                                  <button
+                                    onClick={() => handleGuardarAjusteItem(cotizacion.id, item.id)}
+                                    disabled={ajuste?.guardando}
+                                    className="text-xs text-[#b61b24] hover:underline disabled:opacity-50"
+                                  >
+                                    {ajuste?.guardando ? '...' : 'Guardar'}
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Totales */}
+                    <div className="flex justify-end gap-8 pt-3 border-t border-gray-100">
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Total sugerido</p>
+                        <p className="text-sm text-gray-600 tabular-nums">
+                          R$ {totalSugerido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Total final</p>
+                        <p className="text-sm font-semibold text-gray-800 tabular-nums">
+                          R$ {totalFinalLocal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Generar propuesta */}
+                    {!op.propuestas?.length && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <button
+                          onClick={handleGenerarPropuesta}
+                          disabled={generandoPropuesta}
+                          className="bg-[#b61b24] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#9a1720] disabled:opacity-50 transition-colors"
+                        >
+                          {generandoPropuesta ? 'Gerando proposta...' : 'Gerar proposta'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Dados do serviço — solo en estados posteriores a EN_RECOGIDA_DE_DATOS */}
+            {op.solicitudServicio && op.estado !== 'EN_RECOGIDA_DE_DATOS' && op.estado !== 'PROPUESTA_EN_ELABORACION' && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
                 <h2 className="text-sm font-semibold text-gray-700 mb-4">Dados do serviço</h2>
                 <div className="grid grid-cols-2 gap-3 text-sm">

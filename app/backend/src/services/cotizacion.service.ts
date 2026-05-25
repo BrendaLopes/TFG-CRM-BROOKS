@@ -150,3 +150,38 @@ export const obtenerCotizacion = async (id: string) => {
     }
   })
 }
+
+export const actualizarSolicitudServicio = async (id: string, datos: {
+  tipoServicio?: string
+  frecuenciaServicio?: string
+  direccionServicio?: string
+  restriccionesHorario?: string
+  observaciones?: string
+  items?: Array<{
+    residuoId: string
+    cantidadEstimada: number
+    unidadMedida: string
+    descripcionDetallada?: string
+  }>
+}) => {
+  const { items, ...datosSolicitud } = datos
+
+  // Actualizar datos básicos
+  await prisma.solicitudServicio.update({
+    where: { id },
+    data: datosSolicitud
+  })
+
+  // Si hay items → borrar los anteriores y crear los nuevos
+  if (items) {
+    await prisma.itemServicioSolicitado.deleteMany({ where: { solicitudId: id } })
+    await prisma.itemServicioSolicitado.createMany({
+      data: items.map(i => ({ ...i, solicitudId: id, unidadMedida: i.unidadMedida as any }))
+    })
+  }
+
+  return prisma.solicitudServicio.findUnique({
+    where: { id },
+    include: { items: { include: { residuo: true } } }
+  })
+}

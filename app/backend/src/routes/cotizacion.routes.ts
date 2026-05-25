@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { verificarToken } from '../middleware/auth.middleware'
 import {
   crearSolicitud, generarCotizacion, ajustarPrecio, obtenerCotizacion,
-  crearResiduo, obtenerResiduos, crearTarifa, obtenerTarifas
+  crearResiduo, obtenerResiduos, crearTarifa, obtenerTarifas, actualizarSolicitud
 } from '../controllers/cotizacion.controller'
 
 const router = Router()
@@ -19,5 +19,6 @@ router.post('/solicitudes', crearSolicitud)
 router.post('/solicitudes/:id/cotizar', generarCotizacion)
 router.get('/:id', obtenerCotizacion)
 router.patch('/:id/items/:itemId/precio', ajustarPrecio)
+router.put('/solicitudes/:id', actualizarSolicitud)
 
 export default router

@@ -83,3 +83,15 @@ export const obtenerTarifas = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: error.message })
   }
 }
+
+export const actualizarSolicitud = async (req: AuthRequest, res: Response) => {
+  try {
+    const solicitud = await cotizacionService.actualizarSolicitudServicio(
+      req.params.id as string,
+      req.body
+    )
+    res.json(solicitud)
+  } catch (error: any) {
+    res.status(400).json({ error: error.message })
+  }
+}

@@ -96,22 +96,35 @@ export const actualizarOportunidad = async (id: string, datos: {
   }
 
   if (datos.contacto) {
-    const op = await prisma.oportunidad.findUnique({ where: { id }, select: { clienteId: true } })
-    if (op?.clienteId) {
-      const contactoExistente = await prisma.contacto.findFirst({ where: { clienteId: op.clienteId } })
-      if (contactoExistente) {
-        ops.push(prisma.contacto.update({
-          where: { id: contactoExistente.id },
-          data: {
-            ...(datos.contacto.nombre && { nombre: datos.contacto.nombre }),
-            ...(datos.contacto.telefone && { telefono: datos.contacto.telefone }),
-            ...(datos.contacto.email && { email: datos.contacto.email }),
-          }
-        }))
-      }
+  const op = await prisma.oportunidad.findUnique({ 
+    where: { id }, select: { clienteId: true } 
+  })
+  if (op?.clienteId) {
+    const contactoExistente = await prisma.contacto.findFirst({ 
+      where: { clienteId: op.clienteId } 
+    })
+    if (contactoExistente) {
+      ops.push(prisma.contacto.update({
+        where: { id: contactoExistente.id },
+        data: {
+          ...(datos.contacto.nombre && { nombre: datos.contacto.nombre }),
+          ...(datos.contacto.telefone && { telefono: datos.contacto.telefone }),
+          ...(datos.contacto.email && { email: datos.contacto.email }),
+        }
+      }))
+    } else {
+      // No existe → crear
+      ops.push(prisma.contacto.create({
+        data: {
+          clienteId: op.clienteId,
+          nombre: datos.contacto.nombre || 'Sem nome',
+          telefono: datos.contacto.telefone || '',
+          email: datos.contacto.email || '',
+        }
+      }))
     }
   }
-
+}
   const dataOp: any = {}
   if (datos.prioridad) dataOp.prioridad = datos.prioridad
   if (datos.motivoNoViable !== undefined) dataOp.motivoNoViable = datos.motivoNoViable
