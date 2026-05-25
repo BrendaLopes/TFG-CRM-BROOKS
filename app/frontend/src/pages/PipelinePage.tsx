@@ -4,16 +4,29 @@ import Modal from '../components/Modal'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 
 const ESTADOS = [
   { key: 'LEAD', label: 'Lead', color: 'bg-gray-400' },
   { key: 'CUALIFICADA', label: 'Qualificada', color: 'bg-blue-400' },
-  { key: 'EN_ENTREVISTA_TECNICA', label: 'Entrevista Técnica', color: 'bg-yellow-400' },
+  { key: 'EN_RECOGIDA_DE_DATOS', label: 'Recogida datos', color: 'bg-yellow-400' },
   { key: 'PROPUESTA_EN_ELABORACION', label: 'Elaboração', color: 'bg-orange-400' },
   { key: 'PROPUESTA_ENVIADA', label: 'Prop. Enviada', color: 'bg-purple-400' },
   { key: 'EN_NEGOCIACION', label: 'Negociação', color: 'bg-pink-400' },
   { key: 'GANADA', label: 'Ganha', color: 'bg-green-500' },
   { key: 'PERDIDA', label: 'Perdida', color: 'bg-red-500' },
+  { key: 'NO_VIABLE', label: 'No Viable', color: 'bg-gray-600' },
 ]
 
 const FORM_INICIAL = {
@@ -26,6 +39,24 @@ const FORM_INICIAL = {
   municipio: '',
 }
 
+// ─── Drag & Drop ─────────────────────────────────────────────────────────────
+
+const ESTADOS_FINALES = ['GANADA', 'PERDIDA', 'NO_VIABLE']
+
+const TRANSICIONES_VALIDAS: Record<string, string[]> = {
+  LEAD: ['CUALIFICADA', 'NO_VIABLE'],
+  CUALIFICADA: ['EN_RECOGIDA_DE_DATOS'],
+  EN_RECOGIDA_DE_DATOS: ['PROPUESTA_EN_ELABORACION', 'NO_VIABLE'],
+  PROPUESTA_EN_ELABORACION: ['PROPUESTA_ENVIADA'],
+  PROPUESTA_ENVIADA: ['EN_NEGOCIACION', 'GANADA', 'PERDIDA'],
+  EN_NEGOCIACION: ['PROPUESTA_ENVIADA', 'GANADA', 'PERDIDA'],
+}
+
+const esTransicionValida = (desde: string, hasta: string): boolean =>
+  TRANSICIONES_VALIDAS[desde]?.includes(hasta) ?? false
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface Oportunidad {
   id: string
   estado: string
@@ -35,6 +66,79 @@ interface Oportunidad {
   cliente: { nombre: string }
   usuario: { nombre: string }
   propuestas: any[]
+}
+
+function TarjetaDraggable({
+  op,
+  onNavigate,
+}: {
+  op: Oportunidad
+  onNavigate: () => void
+}) {
+  const esFinal = ESTADOS_FINALES.includes(op.estado)
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: op.id,
+    disabled: esFinal,
+    data: { estado: op.estado },
+  })
+
+  const style: React.CSSProperties = {
+    transform: transform ? CSS.Translate.toString(transform) : undefined,
+    opacity: isDragging ? 0.4 : 1,
+    cursor: esFinal ? 'default' : undefined,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-[#b61b24]/20 transition-all"
+      onClick={onNavigate}
+    >
+      <p className="text-sm font-semibold text-gray-800 leading-tight">
+        {op.cliente?.nombre || op.lead?.nombreEmpresa}
+      </p>
+      <p className="text-xs text-gray-400 mt-1">{op.tipo || '—'}</p>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-xs text-gray-400">{op.usuario?.nombre}</span>
+        {op.prioridad === 'ALTA' && (
+          <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">Alta</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ColumnaDroppable({
+  estado,
+  activeEstado,
+  children,
+}: {
+  estado: string
+  activeEstado: string | null
+  children: React.ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: estado })
+
+  const arrastrandoSobre = isOver && activeEstado !== null && activeEstado !== estado
+  const valida = activeEstado ? esTransicionValida(activeEstado, estado) : false
+
+  const bordeClase = arrastrandoSobre
+    ? valida
+      ? 'border-blue-400 bg-blue-50/40'
+      : 'border-red-300 bg-red-50/40'
+    : 'border-transparent'
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[80px] rounded-lg border-2 p-1 transition-colors duration-150 ${bordeClase}`}
+    >
+      {children}
+    </div>
+  )
 }
 
 export default function PipelinePage() {
@@ -47,6 +151,14 @@ export default function PipelinePage() {
   const [error, setError] = useState('')
   const [form, setForm] = useState(FORM_INICIAL)
   const navigate = useNavigate()
+
+  // ─── Drag & Drop ───────────────────────────────────────────────────────────
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [mensajeError, setMensajeError] = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+  // ──────────────────────────────────────────────────────────────────────────
 
   const cargarPipeline = () => {
     api.get('/oportunidades').then((res) => {
@@ -65,6 +177,9 @@ export default function PipelinePage() {
   ).length
 
   const totalGanadas = oportunidades.filter((o) => o.estado === 'GANADA').length
+
+  const activeOp = activeId ? (oportunidades.find((o) => o.id === activeId) ?? null) : null
+  const activeEstado = activeOp?.estado ?? null
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -99,6 +214,50 @@ export default function PipelinePage() {
     setForm(FORM_INICIAL)
   }
 
+  // ─── Drag & Drop handlers ─────────────────────────────────────────────────
+
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveId(e.active.id as string)
+  }
+
+  const handleDragEnd = async (e: DragEndEvent) => {
+    const { active, over } = e
+    setActiveId(null)
+
+    if (!over) return
+
+    const op = oportunidades.find((o) => o.id === active.id)
+    if (!op) return
+
+    const origen = op.estado
+    const destino = over.id as string
+
+    if (origen === destino) return
+
+    if (!esTransicionValida(origen, destino)) {
+      setMensajeError('Transición no permitida')
+      setTimeout(() => setMensajeError(null), 2000)
+      return
+    }
+
+    // Actualización optimista local — sin recargar la página
+    setOportunidades((prev) =>
+      prev.map((o) => (o.id === op.id ? { ...o, estado: destino } : o))
+    )
+
+    try {
+      await api.patch(`/oportunidades/${op.id}/estado`, { estado: destino })
+    } catch {
+      // Snap back si el PATCH falla
+      setOportunidades((prev) =>
+        prev.map((o) => (o.id === op.id ? { ...o, estado: origen } : o))
+      )
+      alert('Error al actualizar el estado. Intenta de nuevo.')
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   if (loading) return (
     <Layout>
       <div className="flex items-center justify-center h-64 text-gray-400">Carregando...</div>
@@ -122,50 +281,71 @@ export default function PipelinePage() {
         </button>
       </div>
 
+      {/* Toast — transición no permitida */}
+      {mensajeError && (
+        <div className="fixed top-4 right-4 z-50 bg-red-600 text-white px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium">
+          ⚠️ {mensajeError}
+        </div>
+      )}
+
       {/* Kanban */}
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {ESTADOS.map((estado) => {
-          const items = porEstado(estado.key)
-          return (
-            <div key={estado.key} className="flex-shrink-0 w-56">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <div className={`w-2 h-2 rounded-full ${estado.color}`} />
-                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                  {estado.label}
-                </span>
-                <span className="ml-auto text-xs text-gray-400 bg-gray-200 rounded-full px-2 py-0.5">
-                  {items.length}
-                </span>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-3 overflow-x-auto pb-4">
+          {ESTADOS.map((estado) => {
+            const items = porEstado(estado.key)
+            return (
+              <div key={estado.key} className="flex-shrink-0 w-56">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <div className={`w-2 h-2 rounded-full ${estado.color}`} />
+                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    {estado.label}
+                  </span>
+                  <span className="ml-auto text-xs text-gray-400 bg-gray-200 rounded-full px-2 py-0.5">
+                    {items.length}
+                  </span>
+                </div>
+                <ColumnaDroppable estado={estado.key} activeEstado={activeEstado}>
+                  <div className="space-y-2">
+                    {items.map((op) => (
+                      <TarjetaDraggable
+                        key={op.id}
+                        op={op}
+                        onNavigate={() => navigate(`/oportunidades/${op.id}`)}
+                      />
+                    ))}
+                    {items.length === 0 && (
+                      <div className="text-center py-6 text-xs text-gray-300 border-2 border-dashed border-gray-100 rounded-lg">
+                        Sem oportunidades
+                      </div>
+                    )}
+                  </div>
+                </ColumnaDroppable>
               </div>
-              <div className="space-y-2">
-                {items.map((op) => (
-                  <div
-                    key={op.id}
-                    className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-[#b61b24]/20 transition-all"
-                    onClick={() => navigate(`/oportunidades/${op.id}`)}
-                  >
-                    <p className="text-sm font-semibold text-gray-800 leading-tight">
-                      {op.cliente?.nombre || op.lead?.nombreEmpresa}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">{op.tipo || '—'}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-400">{op.usuario?.nombre}</span>
-                      {op.prioridad === 'ALTA' && (
-                        <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">Alta</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {items.length === 0 && (
-                  <div className="text-center py-6 text-xs text-gray-300 border-2 border-dashed border-gray-100 rounded-lg">
-                    Sem oportunidades
-                  </div>
+            )
+          })}
+        </div>
+
+        <DragOverlay dropAnimation={null}>
+          {activeOp ? (
+            <div className="bg-white rounded-lg p-3 shadow-xl border border-[#b61b24]/30 rotate-1 w-56">
+              <p className="text-sm font-semibold text-gray-800 leading-tight">
+                {activeOp.cliente?.nombre || activeOp.lead?.nombreEmpresa}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">{activeOp.tipo || '—'}</p>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-gray-400">{activeOp.usuario?.nombre}</span>
+                {activeOp.prioridad === 'ALTA' && (
+                  <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">Alta</span>
                 )}
               </div>
             </div>
-          )
-        })}
-      </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Modal registro de lead */}
       {modalLead && (
@@ -184,12 +364,17 @@ export default function PipelinePage() {
                 <button
                   onClick={async () => {
                     setSubmitting(true)
-                    await api.post('/leads', form)
-                    setModalLead(false)
-                    setDuplicado(false)
-                    setForm(FORM_INICIAL)
-                    cargarPipeline()
-                    setSubmitting(false)
+                    try {
+                      await api.post('/leads', { ...form, force: true })
+                      setModalLead(false)
+                      setDuplicado(false)
+                      setForm(FORM_INICIAL)
+                      cargarPipeline()
+                    } catch {
+                      setError('Erro ao confirmar registro. Tente novamente.')
+                    } finally {
+                      setSubmitting(false)
+                    }
                   }}
                   className="bg-yellow-600 text-white px-4 py-1.5 rounded text-sm hover:bg-yellow-700"
                 >
