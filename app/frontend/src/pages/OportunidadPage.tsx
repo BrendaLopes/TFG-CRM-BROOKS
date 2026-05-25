@@ -34,6 +34,16 @@ export default function OportunidadPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [modalPropuesta, setModalPropuesta] = useState<any>(null)
+  const [formPropuesta, setFormPropuesta] = useState({
+    condicionesPago: '',
+    validadeDias: 5,
+    nombreFirmante: '',
+    cargoFirmante: '',
+    observaciones: '',
+  })
+  const [guardandoPropuesta, setGuardandoPropuesta] = useState(false)
+
   // ── Edición inline ──────────────────────────────────────────────────────────
   const [editandoSeccion, setEditandoSeccion] = useState<SeccionEdicion>(null)
   const [guardando, setGuardando] = useState(false)
@@ -1223,28 +1233,47 @@ const handleGuardarServicio = async () => {
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
                 <h2 className="text-sm font-semibold text-gray-700 mb-3">Propostas</h2>
                 {op.propuestas.map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <div key={p.id} className="py-2 border-b border-gray-50 last:border-0">
+                    <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">{p.numeroPropuesta}</p>
-                      <p className="text-xs text-gray-400">v{p.version} · {p.estado}</p>
+                        <p className="text-sm font-medium text-gray-700">{p.numeroPropuesta}</p>
+                        <p className="text-xs text-gray-400">v{p.version} · {p.estado}</p>
                     </div>
-                    <button
-                      onClick={async () => {
-                      try {
-                        const res = await api.get(`/propuestas/${p.id}/pdf`, { responseType: 'blob' })
-                        const url = URL.createObjectURL(res.data)
-                        window.open(url, '_blank')
-                      } catch {
-                        alert('Error al generar el PDF')
-                      }
-                    }}
-                      className="text-xs text-[#b61b24] hover:underline"
-                    >
-                      PDF
-                    </button>
-                  </div>
+                    <div className="flex gap-2">
+                        <button
+                        onClick={() => {
+                            setFormPropuesta({
+                            condicionesPago: p.condicionesPago || 'Prazo de faturamento 30 dias',
+                            validadeDias: p.validadeDias || 5,
+                            nombreFirmante: p.nombreFirmante || '',
+                            cargoFirmante: p.cargoFirmante || '',
+                            observaciones: p.observaciones || '',
+                            })
+                            setModalPropuesta(p)
+                        }}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                        >
+                        Editar
+                        </button>
+                        <button
+                        onClick={async () => {
+                            try {
+                            const res = await api.get(`/propuestas/${p.id}/pdf`, { responseType: 'blob' })
+                            const url = URL.createObjectURL(res.data)
+                            window.open(url, '_blank')
+                            } catch {
+                            alert('Error al generar el PDF')
+                            }
+                        }}
+                        className="text-xs text-[#b61b24] hover:underline"
+                        >
+                        PDF
+                        </button>
+                    </div>
+                    </div>
+                </div>
                 ))}
-              </div>
+            </div>
             )}
 
             {/* Orden de servicio */}
@@ -1299,6 +1328,96 @@ const handleGuardarServicio = async () => {
           </form>
         </Modal>
       )}
+      {modalPropuesta && (
+        <Modal 
+            titulo={`Editar ${modalPropuesta.numeroPropuesta}`} 
+            onClose={() => setModalPropuesta(null)} 
+            ancho="max-w-lg"
+        >
+            <div className="space-y-4">
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                Condições de pagamento
+                </label>
+                <input
+                value={formPropuesta.condicionesPago}
+                onChange={(e) => setFormPropuesta({ ...formPropuesta, condicionesPago: e.target.value })}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#b61b24]"
+                />
+            </div>
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                Validade (dias)
+                </label>
+                <input
+                type="number"
+                value={formPropuesta.validadeDias}
+                onChange={(e) => setFormPropuesta({ ...formPropuesta, validadeDias: Number(e.target.value) })}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#b61b24]"
+                />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Nome do firmante
+                </label>
+                <input
+                    value={formPropuesta.nombreFirmante}
+                    onChange={(e) => setFormPropuesta({ ...formPropuesta, nombreFirmante: e.target.value })}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#b61b24]"
+                />
+                </div>
+                <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Cargo
+                </label>
+                <input
+                    value={formPropuesta.cargoFirmante}
+                    onChange={(e) => setFormPropuesta({ ...formPropuesta, cargoFirmante: e.target.value })}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#b61b24]"
+                />
+                </div>
+            </div>
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                Observações
+                </label>
+                <textarea
+                value={formPropuesta.observaciones}
+                onChange={(e) => setFormPropuesta({ ...formPropuesta, observaciones: e.target.value })}
+                rows={3}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#b61b24] resize-none"
+                />
+            </div>
+            <div className="flex justify-end gap-3">
+                <button
+                onClick={() => setModalPropuesta(null)}
+                className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50"
+                >
+                Cancelar
+                </button>
+                <button
+                disabled={guardandoPropuesta}
+                onClick={async () => {
+                    setGuardandoPropuesta(true)
+                    try {
+                    await api.patch(`/propuestas/${modalPropuesta.id}`, formPropuesta)
+                    setModalPropuesta(null)
+                    cargar()
+                    } catch {
+                    alert('Error al guardar. Intenta de nuevo.')
+                    } finally {
+                    setGuardandoPropuesta(false)
+                    }
+                }}
+                className="bg-[#b61b24] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#9a1720] disabled:opacity-50"
+                >
+                {guardandoPropuesta ? 'Guardando...' : 'Guardar'}
+                </button>
+            </div>
+            </div>
+        </Modal>
+        )}
     </Layout>
   )
 }
