@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import PipelinePage from './pages/PipelinePage'
 import NuevoLeadPage from './pages/NuevoLeadPage'
+import OportunidadPage from './pages/OportunidadPage'
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -15,6 +16,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<PrivateRoute><PipelinePage /></PrivateRoute>} />
       <Route path="/nuevo-lead" element={<PrivateRoute><NuevoLeadPage /></PrivateRoute>} />
+      <Route path="/oportunidades/:id" element={<PrivateRoute><OportunidadPage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
       
     </Routes>

@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import Modal from '../components/Modal'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const ESTADOS = [
   { key: 'LEAD', label: 'Lead', color: 'bg-gray-400' },
@@ -45,6 +46,7 @@ export default function PipelinePage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState(FORM_INICIAL)
+  const navigate = useNavigate()
 
   const cargarPipeline = () => {
     api.get('/oportunidades').then((res) => {
@@ -140,6 +142,7 @@ export default function PipelinePage() {
                   <div
                     key={op.id}
                     className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-[#b61b24]/20 transition-all"
+                    onClick={() => navigate(`/oportunidades/${op.id}`)}
                   >
                     <p className="text-sm font-semibold text-gray-800 leading-tight">
                       {op.cliente?.nombre || op.lead?.nombreEmpresa}
