@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { verificarToken } from '../middleware/auth.middleware'
-import { crearOportunidad, obtenerPipeline, obtenerOportunidadPorId, avanzarEstado, registrarInteraccion } from '../controllers/oportunidad.controller'
+import { crearOportunidad, obtenerPipeline, obtenerOportunidadPorId, avanzarEstado, registrarInteraccion, actualizarOportunidad } from '../controllers/oportunidad.controller'
 
 const router = Router()
 router.use(verificarToken)
@@ -10,5 +10,6 @@ router.get('/', obtenerPipeline)
 router.get('/:id', obtenerOportunidadPorId)
 router.patch('/:id/estado', avanzarEstado)
 router.post('/:id/interacciones', registrarInteraccion)
+router.patch('/:id', actualizarOportunidad)
 
 export default router

@@ -70,3 +70,23 @@ export const registrarInteraccion = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ error: error.message })
   }
 }
+export const actualizarOportunidad = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string
+    const { nombre, empresa, canal, responsavel, contacto, notasQualificacao, criteriosViabilidade } = req.body
+
+    const oportunidad = await oportunidadService.actualizarOportunidad(id, {
+      nombre,
+      empresa,
+      canal,
+      responsavel,
+      contacto,
+      notasQualificacao,
+      criteriosViabilidade,
+    })
+
+    res.json(oportunidad)
+  } catch (error: any) {
+    res.status(400).json({ error: error.message })
+  }
+}

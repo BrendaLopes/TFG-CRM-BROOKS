@@ -270,3 +270,41 @@ Formulario de registro de lead (CU-01) y ficha de oportunidad
 
 ### Pendiente
 - Seed del catálogo real de residuos y tarifas (pendiente Excel de Brooks)
+
+## [fecha de hoy] — Sprint frontend: interactividad core
+
+### Cambios implementados
+
+**OportunidadPage.tsx**
+- Añadido botón "← Volver al pipeline" en cabecera (navigate('/'))
+- Implementada edición inline por secciones independientes:
+  - Sección "Dados básicos": nombre, empresa, canal, responsável
+  - Sección "Contacto": nome, telefone, email
+  - Sección "Qualificação": notasQualificacao, criteriosViabilidade
+- Cada sección tiene su propio estado de edición (solo una activa a la vez)
+- PATCH /api/oportunidades/:id por sección con feedback inline (sin alert)
+- Correcciones previas: error handling en carga, bug NO_VIABLE, 
+  historial undefined, useAuth no usado
+
+**PipelinePage.tsx**
+- Implementado drag & drop con @dnd-kit/core
+- Matriz de transiciones válidas codificada según diagrama de estados del modelo
+- Estados finales (GANADA, PERDIDA, NO_VIABLE) no arrastrables
+- Feedback visual: borde azul (válido) / rojo (inválido) en columna destino
+- Actualización optimista local + PATCH /api/oportunidades/:id
+- Snap back si PATCH falla
+- Click (< 8px) sigue navegando a ficha de oportunidad
+- Toast de error 2s si transición no permitida
+
+### Decisiones de diseño
+- Edición inline elegida sobre modal: permite ver el contexto 
+  de la oportunidad mientras se edita
+- activationConstraint { distance: 8 } para distinguir click de drag
+- Transiciones validadas en frontend Y backend para coherencia 
+  con el modelo de dominio
+
+### Impacto en cap. 3
+- CU-02 (Actualizar lead) y CU-03 (Gestionar oportunidad) 
+  quedan cubiertos por la edición inline
+- La matriz TRANSICIONES_VALIDAS implementa exactamente 
+  el diagrama de estados de la oportunidad (§3.2.2)
