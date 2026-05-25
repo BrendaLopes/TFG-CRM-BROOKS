@@ -347,3 +347,114 @@ Formulario de registro de lead (CU-01) y ficha de oportunidad
   (viable/no viable + prioridad) — más alineado con el modelo de dominio
 - El flujo POST solicitud → cotización automática → ajuste manual implementa
   exactamente el modelo de precificación descrito en §3.1
+
+## [fecha] — Modal edición propuesta (CU-07 completo)
+- Botón "Editar" en sidebar de propuestas abre modal
+- Campos editables: condicionesPago, validadeDias, nombreFirmante, 
+  cargoFirmante, observaciones
+- PATCH /api/propuestas/:id + recarga oportunidad
+- PDF genera con los datos actualizados
+- CU-07 Generar propuesta: COMPLETO ✅
+
+## 2026-05-25 — Sprint frontend completo: pipeline → cierre
+
+### Backend — cambios acumulados
+
+**Schema y migraciones:**
+- Migración: `EN_ENTREVISTA_TECNICA` → `EN_RECOGIDA_DE_DATOS` en enum EstadoOportunidad
+- Migración: campo `motivoNoViable String?` añadido a modelo Oportunidad
+- Seed: 8 residuos de prueba + tarifas base con precios aleatorios
+
+**Nuevos endpoints:**
+- `PATCH /api/oportunidades/:id` — actualiza datos básicos, contacto, 
+  prioridad, motivoNoViable (service con múltiples operaciones paralelas)
+- `PUT /api/cotizaciones/solicitudes/:id` — edita solicitud existente 
+  (borra items anteriores y crea nuevos)
+
+**Fixes:**
+- `actualizarOportunidad`: crea contacto si no existe (antes solo actualizaba)
+- `obtenerOportunidadPorId`: include cotizacion dentro de solicitudServicio
+- `generarCotizacion`: borra cotización existente antes de regenerar 
+  (evita error de unique constraint)
+- `actualizarOportunidad` en `actualizarOportunidad service`: 
+  include cotizacion en el return final
+
+**PDF Orden de Servicio:**
+- Rediseñado con logo SVG Brooks, colores corporativos #b61b24
+- Secciones con título en rojo, grid 2 columnas
+- Referencia a propuesta comercial
+- Dos bloques de firma (operacional + cliente)
+- Badge ISO 9001
+
+### Frontend — cambios acumulados
+
+**AuthContext / App.tsx:**
+- Fix condición de carrera en PrivateRoute: añadido estado `checking` 
+  para esperar que useEffect lea localStorage antes de redirigir a login
+
+**PipelinePage:**
+- `handleSubmitLead` encadena: POST /leads → POST /clientes → 
+  POST /clientes/:id/contactos → POST /oportunidades
+  Lead ahora aparece inmediatamente en columna LEAD del Kanban
+- Tarjeta en estado LEAD muestra "Pendente qualificação" en lugar del tipo
+- Badges de prioridad: ALTA (rojo), MEDIA (amarillo), BAJA (oculto)
+- Fix duplicado: `{ force: true }` en reenvío con catch
+
+**OportunidadPage — features nuevas:**
+- Botón "← Volver al pipeline" en cabecera
+- Edición inline por secciones (basicos, contacto, cualificación)
+- Sección Qualificação rediseñada: radio Viable/No viable + select prioridad 
+  + textarea motivo (solo si no viable) — al guardar cambia estado automáticamente
+- Sección "Dados do serviço": formulario con tipo, frecuencia, dirección, 
+  restricciones, lista de residuos con cantidad y unidad; visible en todos 
+  los estados >= EN_RECOGIDA_DE_DATOS
+- Sección "Cotização": tabla con residuo/cantidad/unidad/precio sugerido/
+  precio final ajustable con justificación obligatoria si modifica
+- Botón "Gerar proposta" abre modal prellenado con usuario logado
+- Botón "Editar" en cada propuesta del sidebar
+- Botón "+ Nova versão" genera nueva propuesta sin borrar la anterior
+- Modal de cierre: GANADA (confirma + genera OS automáticamente) y 
+  PERDIDA (motivo obligatorio)
+- PDF de propuesta y OS via axios blob (sin exponer token en URL)
+
+**OportunidadPage — fixes:**
+- Fix tabla cotización: campos correctos (descripcion, cantidad, unidad)
+- Fix sección datos servicio: visible también en PROPUESTA_EN_ELABORACION+
+- Fix handleGuardarServicio: PUT si existe solicitud, POST si es nueva
+- Fix contacto: crea si no existe al guardar sección contacto
+
+### CU completados
+- CU-01 Registrar lead ✅
+- CU-02 Actualizar lead ✅
+- CU-03 Gestionar oportunidad ✅
+- CU-04 Recoger datos del servicio ✅
+- CU-05 Generar cotización asistida ✅
+- CU-06 Ajustar precios de cotización ✅
+- CU-07 Generar propuesta + edición + PDF ✅
+- CU-08 Registrar interacciones ✅
+- CU-09 Cerrar oportunidad (ganada/perdida) ✅
+- CU-10 Generar orden de servicio + PDF ✅
+
+### Decisiones de diseño registradas
+- Cualificación como decisión estructurada (no texto libre): alineado 
+  con el modelo de dominio — viable/no viable es una decisión binaria, 
+  no una nota
+- Drag & drop con validación de transiciones en frontend: la matriz 
+  TRANSICIONES_VALIDAS implementa exactamente el diagrama de estados §3.2.2
+- Cotización regenerable: borrar y recrear es más simple que versionar 
+  items individuales para el MVP
+- Nueva versión de propuesta sin borrar anteriores: permite trazabilidad 
+  del historial de negociación
+- PDF via blob: evita exponer JWT en URL del navegador
+- Precio de transporte y tipo de contenedor: dejados fuera del MVP, 
+  documentados como mejoras futuras en conclusiones del TFG
+
+### Impacto en capítulos del TFG
+- Cap. 3 §3.1: el flujo AS-IS → TO-BE queda demostrado end-to-end
+- Cap. 3 §3.2.2: el diagrama de estados de la oportunidad está 
+  implementado fielmente (TRANSICIONES_VALIDAS en PipelinePage)
+- Cap. 4: todas las pantallas principales tienen implementación 
+  funcional para capturas
+- Cap. 4 §5.4: la arquitectura cliente-servidor con JWT está operativa
+- Conclusiones: mencionar precio por km y tipo de contenedor como 
+  trabajo futuro

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
 import api from '../services/api'
@@ -26,6 +27,7 @@ type SeccionEdicion = null | 'basicos' | 'contacto' | 'cualificacion'
 
 export default function OportunidadPage() {
   const { id } = useParams()
+  const { usuario } = useAuth()
   const navigate = useNavigate()
   const [oportunidad, setOportunidad] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -36,13 +38,16 @@ export default function OportunidadPage() {
 
   const [modalPropuesta, setModalPropuesta] = useState<any>(null)
   const [formPropuesta, setFormPropuesta] = useState({
-    condicionesPago: '',
+    condicionesPago: 'Prazo de faturamento 30 dias',
     validadeDias: 5,
     nombreFirmante: '',
-    cargoFirmante: '',
+    cargoFirmante: 'Departamento Comercial',
     observaciones: '',
   })
   const [guardandoPropuesta, setGuardandoPropuesta] = useState(false)
+  const [modalCierre, setModalCierre] = useState<'GANADA' | 'PERDIDA' | null>(null)
+  const [motivoCierre, setMotivoCierre] = useState('')
+  const [cerrandoOportunidad, setCerrandoOportunidad] = useState(false)
 
   // ── Edición inline ──────────────────────────────────────────────────────────
   const [editandoSeccion, setEditandoSeccion] = useState<SeccionEdicion>(null)
@@ -150,6 +155,26 @@ export default function OportunidadPage() {
       alert('Error al avanzar estado. Intenta de nuevo.')
     }
   }
+  const handleCerrarOportunidad = async () => {
+    if (modalCierre === 'PERDIDA' && !motivoCierre.trim()) {
+        alert('El motivo de pérdida es obligatorio.')
+        return
+    }
+    setCerrandoOportunidad(true)
+    try {
+        await api.patch(`/propuestas/oportunidades/${id}/cerrar`, {
+        estado: modalCierre,
+        motivoPerdida: modalCierre === 'PERDIDA' ? motivoCierre : undefined,
+        })
+        setModalCierre(null)
+        setMotivoCierre('')
+        cargar()
+    } catch {
+        alert('Error al cerrar la oportunidad. Intenta de nuevo.')
+    } finally {
+        setCerrandoOportunidad(false)
+    }
+    }
 
   // ── Handlers de edición inline ──────────────────────────────────────────────
 
@@ -367,19 +392,17 @@ const handleGuardarServicio = async () => {
     }
   }
 
-  const handleGenerarPropuesta = async () => {
-    const cotizacionId = oportunidad?.solicitudServicio?.cotizacion?.id
-    if (!cotizacionId) return
-    setGenerandoPropuesta(true)
-    try {
-      await api.post('/propuestas', { cotizacionId })
-      cargar()
-    } catch {
-      alert('Error al generar la propuesta. Intenta de nuevo.')
-    } finally {
-      setGenerandoPropuesta(false)
+    const handleGenerarPropuesta = async () => {
+    // Abrir modal con datos prellenados del usuario logado
+    setFormPropuesta({
+        condicionesPago: 'Prazo de faturamento 30 dias',
+        validadeDias: 5,
+        nombreFirmante: usuario?.nombre || '',
+        cargoFirmante: 'Departamento Comercial',
+        observaciones: '',
+    })
+    setModalPropuesta({ id: null, numeroPropuesta: 'Nova proposta' })
     }
-  }
 
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -1026,11 +1049,9 @@ const handleGuardarServicio = async () => {
                               : false
                             return (
                               <tr key={item.id}>
-                                <td className="py-2.5 text-gray-700 pr-3">
-                                  {residuos.find((r) => r.id === item.residuoId)?.nombre || item.residuoId}
-                                </td>
-                                <td className="py-2.5 text-right text-gray-600">{item.cantidadEstimada}</td>
-                                <td className="py-2.5 text-gray-500 pl-3">{item.unidadMedida}</td>
+                                <td className="py-2.5 text-gray-700 pr-3">{item.descripcion}</td>
+                                <td className="py-2.5 text-right text-gray-600">{Number(item.cantidad).toLocaleString('pt-BR')}</td>
+                                <td className="py-2.5 text-gray-500 pl-3">{item.unidad}</td>
                                 <td className="py-2.5 text-right text-gray-400 tabular-nums">
                                   R$ {Number(item.precioSugerido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </td>
@@ -1201,37 +1222,65 @@ const handleGuardarServicio = async () => {
 
             {/* Acciones */}
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Ações</h2>
-              <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3">Ações</h2>
+            <div className="space-y-2">
                 {proximoEstado && !['GANADA', 'PERDIDA', 'NO_VIABLE'].includes(op.estado) && (
-                  <button
+                <button
                     onClick={() => handleAvanzarEstado(proximoEstado)}
                     className="w-full bg-[#b61b24] text-white rounded py-2 text-sm font-medium hover:bg-[#9a1720]"
-                  >
+                >
                     Avançar → {ESTADOS_LABELS[proximoEstado]}
-                  </button>
+                </button>
+                )}
+                {!['GANADA', 'PERDIDA', 'NO_VIABLE'].includes(op.estado) && (
+                <button
+                    onClick={() => setModalCierre('GANADA')}
+                    className="w-full bg-green-600 text-white rounded py-2 text-sm font-medium hover:bg-green-700"
+                >
+                    ✓ Fechar como Ganha
+                </button>
                 )}
                 <button
-                  onClick={() => setModalInteraccion(true)}
-                  className="w-full border border-gray-300 text-gray-600 rounded py-2 text-sm hover:bg-gray-50"
+                onClick={() => setModalInteraccion(true)}
+                className="w-full border border-gray-300 text-gray-600 rounded py-2 text-sm hover:bg-gray-50"
                 >
-                  Registrar interação
+                Registrar interação
                 </button>
                 {!['GANADA', 'PERDIDA', 'NO_VIABLE'].includes(op.estado) && (
-                  <button
-                    onClick={() => handleAvanzarEstado('PERDIDA')}
+                <button
+                    onClick={() => { setMotivoCierre(''); setModalCierre('PERDIDA') }}
                     className="w-full border border-red-200 text-red-600 rounded py-2 text-sm hover:bg-red-50"
-                  >
+                >
                     Registrar como perdida
-                  </button>
+                </button>
                 )}
-              </div>
+            </div>
             </div>
 
             {/* Propuestas */}
             {op.propuestas?.length > 0 && (
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">Propostas</h2>
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-semibold text-gray-700">Propostas</h2>
+                    {!['GANADA', 'PERDIDA', 'NO_VIABLE'].includes(op.estado) && 
+                    op.solicitudServicio?.cotizacion && (
+                        <button
+                        onClick={() => {
+                            setFormPropuesta({
+                            condicionesPago: 'Prazo de faturamento 30 dias',
+                            validadeDias: 5,
+                            nombreFirmante: usuario?.nombre || '',
+                            cargoFirmante: 'Departamento Comercial',
+                            observaciones: '',
+                            })
+                            setModalPropuesta({ id: null, numeroPropuesta: 'Nova versão' })
+                        }}
+                        className="text-xs text-[#b61b24] hover:underline"
+                        >
+                        + Nova versão
+                        </button>
+                    )}
+                </div>
                 {op.propuestas.map((p: any) => (
                 <div key={p.id} className="py-2 border-b border-gray-50 last:border-0">
                     <div className="flex items-center justify-between">
@@ -1328,6 +1377,68 @@ const handleGuardarServicio = async () => {
           </form>
         </Modal>
       )}
+      {modalCierre && (
+        <Modal
+            titulo={modalCierre === 'GANADA' ? '✓ Fechar como Ganha' : 'Registrar como Perdida'}
+            onClose={() => setModalCierre(null)}
+            ancho="max-w-md"
+        >
+            <div className="space-y-4">
+            {modalCierre === 'GANADA' ? (
+                <div className="bg-green-50 border border-green-200 rounded p-3">
+                <p className="text-sm text-green-800">
+                    Ao confirmar, a oportunidade será fechada como <strong>Ganha</strong>
+                    e uma Ordem de Serviço será gerada automaticamente.
+                </p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                <div className="bg-red-50 border border-red-200 rounded p-3">
+                    <p className="text-sm text-red-800">
+                    Informe o motivo pelo qual esta oportunidade foi perdida.
+                    </p>
+                </div>
+                <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Motivo da perda *
+                    </label>
+                    <textarea
+                    value={motivoCierre}
+                    onChange={(e) => setMotivoCierre(e.target.value)}
+                    rows={3}
+                    placeholder="Ex: Preço acima do mercado, cliente escolheu concorrente..."
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#b61b24] resize-none"
+                    />
+                </div>
+                </div>
+            )}
+            <div className="flex justify-end gap-3">
+                <button
+                onClick={() => setModalCierre(null)}
+                className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50"
+                >
+                Cancelar
+                </button>
+                <button
+                onClick={handleCerrarOportunidad}
+                disabled={cerrandoOportunidad}
+                className={`px-4 py-2 rounded text-sm font-medium text-white disabled:opacity-50 ${
+                    modalCierre === 'GANADA'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-[#b61b24] hover:bg-[#9a1720]'
+                }`}
+                >
+                {cerrandoOportunidad
+                    ? 'Processando...'
+                    : modalCierre === 'GANADA'
+                    ? 'Confirmar e gerar OS'
+                    : 'Registrar perda'
+                }
+                </button>
+            </div>
+            </div>
+        </Modal>
+        )}
       {modalPropuesta && (
         <Modal 
             titulo={`Editar ${modalPropuesta.numeroPropuesta}`} 
@@ -1401,13 +1512,22 @@ const handleGuardarServicio = async () => {
                 onClick={async () => {
                     setGuardandoPropuesta(true)
                     try {
-                    await api.patch(`/propuestas/${modalPropuesta.id}`, formPropuesta)
-                    setModalPropuesta(null)
-                    cargar()
+                        if (modalPropuesta.id === null) {
+                        // Crear propuesta nueva
+                        const cotizacionId = oportunidad?.solicitudServicio?.cotizacion?.id
+                        const res = await api.post('/propuestas', { cotizacionId })
+                        // Actualizar con los datos del formulario
+                        await api.patch(`/propuestas/${res.data.id}`, formPropuesta)
+                        } else {
+                        // Editar propuesta existente
+                        await api.patch(`/propuestas/${modalPropuesta.id}`, formPropuesta)
+                        }
+                        setModalPropuesta(null)
+                        cargar()
                     } catch {
-                    alert('Error al guardar. Intenta de nuevo.')
+                        alert('Error al guardar. Intenta de nuevo.')
                     } finally {
-                    setGuardandoPropuesta(false)
+                        setGuardandoPropuesta(false)
                     }
                 }}
                 className="bg-[#b61b24] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#9a1720] disabled:opacity-50"
