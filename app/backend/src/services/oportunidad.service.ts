@@ -33,7 +33,12 @@ export const obtenerOportunidadPorId = async (id: string) => {
       cliente: { include: { contactos: true } },
       usuario: { select: { nombre: true } },
       historial: { orderBy: { fecha: 'desc' } },
-      solicitudServicio: { include: { items: { include: { residuo: true } } } },
+            solicitudServicio: { 
+        include: { 
+            items: { include: { residuo: true } },
+            cotizacion: { include: { items: { include: { tarifaBase: true } } } }
+        } 
+    },
       propuestas: { orderBy: { version: 'desc' } },
       ordenServicio: true
     }
@@ -141,7 +146,12 @@ export const actualizarOportunidad = async (id: string, datos: {
       cliente: { include: { contactos: true } },
       usuario: { select: { nombre: true } },
       historial: { orderBy: { fecha: 'desc' } },
-      solicitudServicio: { include: { items: { include: { residuo: true } } } },
+            solicitudServicio: { 
+        include: { 
+            items: { include: { residuo: true } },
+            cotizacion: { include: { items: { include: { tarifaBase: true } } } }
+        } 
+    },
       propuestas: { orderBy: { version: 'desc' } },
       ordenServicio: true
     }

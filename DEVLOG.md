@@ -319,3 +319,31 @@ Formulario de registro de lead (CU-01) y ficha de oportunidad
 
 ### Impacto cap. 3
 - CU-01 queda completamente cubierto end-to-end
+
+## [fecha] — Sprint cotización completo
+
+### Cambios backend
+- Migración: EN_ENTREVISTA_TECNICA → EN_RECOGIDA_DE_DATOS en enum EstadoOportunidad
+- Migración: añadido campo motivoNoViable en Oportunidad
+- Nuevo endpoint PUT /api/cotizaciones/solicitudes/:id para editar solicitud existente
+- Fix actualizarOportunidad: crea contacto si no existe (antes solo actualizaba)
+
+### Cambios frontend
+- OportunidadPage: sección "Dados do serviço" visible en todos los estados 
+  posteriores a EN_RECOGIDA_DE_DATOS
+- OportunidadPage: handleGuardarServicio distingue crear vs actualizar solicitud
+- OportunidadPage: sección Cotização con generación automática y ajuste por ítem
+- Fix PrivateRoute: condición de carrera con localStorage al recargar página
+- Seed: 8 residuos y tarifas de prueba añadidos al catálogo
+
+### CU cubiertos
+- CU-04: Recoger datos del servicio ✅
+- CU-05: Generar cotización ✅  
+- CU-06: Ajustar precios de cotización ✅
+- CU-07: Generar propuesta (parcial — falta vista edición antes de PDF) ✅
+
+### Impacto cap. 3
+- La cualificación fue rediseñada de texto libre a decisión estructurada
+  (viable/no viable + prioridad) — más alineado con el modelo de dominio
+- El flujo POST solicitud → cotización automática → ajuste manual implementa
+  exactamente el modelo de precificación descrito en §3.1

@@ -36,6 +36,16 @@ export const generarCotizacion = async (solicitudId: string) => {
   })
   if (!solicitud) throw new Error('Solicitud no encontrada')
 
+    // Si ya existe cotización para esta solicitud → borrarla antes de regenerar
+    const cotizacionExistente = await prisma.cotizacion.findUnique({
+      where: { solicitudId },
+     include: { items: true }
+    })
+    if (cotizacionExistente) {
+        await prisma.itemCotizacion.deleteMany({ where: { cotizacionId: cotizacionExistente.id } })
+        await prisma.cotizacion.delete({ where: { id: cotizacionExistente.id } })
+    }
+
   // Calcular items de cotización
   const itemsCotizacion = []
   let totalSugerido = 0

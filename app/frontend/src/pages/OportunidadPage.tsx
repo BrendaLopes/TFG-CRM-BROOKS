@@ -1229,7 +1229,15 @@ const handleGuardarServicio = async () => {
                       <p className="text-xs text-gray-400">v{p.version} · {p.estado}</p>
                     </div>
                     <button
-                      onClick={() => window.open(`/api/propuestas/${p.id}/pdf`, '_blank')}
+                      onClick={async () => {
+                      try {
+                        const res = await api.get(`/propuestas/${p.id}/pdf`, { responseType: 'blob' })
+                        const url = URL.createObjectURL(res.data)
+                        window.open(url, '_blank')
+                      } catch {
+                        alert('Error al generar el PDF')
+                      }
+                    }}
                       className="text-xs text-[#b61b24] hover:underline"
                     >
                       PDF
@@ -1244,7 +1252,15 @@ const handleGuardarServicio = async () => {
               <div className="bg-green-50 rounded-lg border border-green-200 p-5">
                 <h2 className="text-sm font-semibold text-green-800 mb-2">✓ Ordem de Serviço gerada</h2>
                 <button
-                  onClick={() => window.open(`/api/propuestas/ordenes/${op.ordenServicio.id}/pdf`, '_blank')}
+                  onClick={async () => {
+                  try {
+                    const res = await api.get(`/propuestas/ordenes/${op.ordenServicio.id}/pdf`, { responseType: 'blob' })
+                    const url = URL.createObjectURL(res.data)
+                    window.open(url, '_blank')
+                  } catch {
+                    alert('Error al generar el PDF')
+                  }
+                }}
                   className="text-xs text-green-700 hover:underline"
                 >
                   Baixar OS em PDF
