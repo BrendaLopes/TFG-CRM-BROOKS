@@ -105,8 +105,13 @@ function TarjetaDraggable({
       </p>
       <div className="flex items-center justify-between mt-2">
         <span className="text-xs text-gray-400">{op.usuario?.nombre}</span>
-        {op.prioridad === 'ALTA' && (
-          <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">Alta</span>
+            {(op.prioridad === 'ALTA' || op.prioridad === 'MEDIA') && (
+        <span className={`text-xs px-1.5 py-0.5 rounded ${
+             op.prioridad === 'ALTA' ? 'bg-red-50 text-red-600' :
+            'bg-yellow-50 text-yellow-600'
+        }`}>
+            {op.prioridad === 'ALTA' ? 'Alta' : 'Média'}
+        </span>
         )}
       </div>
     </div>
