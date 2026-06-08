@@ -7,9 +7,6 @@ actor "Usuario de captación" as Captacion
 actor "Comercial" as Comercial
 actor "Administrador" as Admin
 
-Admin --|> Comercial
-Admin --|> Captacion
-
 rectangle "Sistema CRM — Brooks Ambiental" {
   usecase "CU-01 Registrar lead" as CU01
   usecase "CU-02 Actualizar lead" as CU02
@@ -27,6 +24,7 @@ rectangle "Sistema CRM — Brooks Ambiental" {
 
 Captacion --> CU01
 Captacion --> CU02
+
 Comercial --> CU01
 Comercial --> CU02
 Comercial --> CU03
@@ -37,6 +35,10 @@ Comercial --> CU07
 Comercial --> CU08
 Comercial --> CU09
 Comercial --> CU10
+
 Admin --> CU11
 Admin --> CU12
+
+Admin --|> Comercial
+Admin --|> Captacion
 @enduml
