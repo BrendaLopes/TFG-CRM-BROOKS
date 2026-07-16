@@ -1,0 +1,66 @@
+@startuml
+title Diagrama de secuencia — CU-07 Generar propuesta
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.4
+skinparam defaultFontSize 11
+hide stereotype
+
+skinparam participant {
+  BackgroundColor<<B>> #fff2cc
+  BorderColor<<B>> #d6b656
+  BackgroundColor<<C>> #d5e8d4
+  BorderColor<<C>> #82b366
+  BackgroundColor<<E>> #dae8fc
+  BorderColor<<E>> #6c8ebf
+}
+
+actor Comercial
+
+participant "PropuestaView" as View <<B>>
+participant "GenerarPropuestaController" as Ctrl <<C>>
+participant "Cotizacion" as Cot <<E>>
+participant "Propuesta" as Prop <<E>>
+participant "Oportunidad" as Op <<E>>
+
+Comercial -> View : solicitar generar propuesta
+View -> Ctrl : generarPropuesta(cotizacionId)
+
+Ctrl -> Cot : obtenerDatosFinales()
+Cot --> Ctrl : datos del servicio y precios finales
+
+Ctrl -> Prop : crearBorrador(datos, version=1)
+Prop --> Ctrl : propuesta v1 en borrador
+
+Ctrl -> Op : asociarPropuesta(propuestaId)
+Ctrl --> View : mostrarBorrador(propuesta)
+View --> Comercial : muestra borrador de la propuesta
+
+opt el comercial realiza ajustes antes del envío
+  Comercial -> View : modificar borrador
+  View -> Ctrl : actualizarBorrador(propuestaId, cambios)
+  Ctrl -> Prop : guardarCambios(cambios)
+  Prop --> Ctrl : borrador actualizado
+  Ctrl --> View : mostrarBorradorActualizado()
+  View --> Comercial : muestra borrador actualizado
+end
+
+opt el comercial envía la propuesta
+  Comercial -> View : confirmar envío
+  View -> Ctrl : enviarPropuesta(propuestaId)
+  Ctrl -> Prop : actualizarEstado(ENVIADA)
+  Ctrl -> Op : actualizarEstado(PROPUESTA_ENVIADA)
+  Ctrl --> View : confirmarEnvio()
+  View --> Comercial : propuesta enviada
+end
+
+opt el cliente solicita cambios
+  Comercial -> View : registrar cambios solicitados
+  View -> Ctrl : generarNuevaVersion(propuestaId, cambios)
+  Ctrl -> Prop : crearNuevaVersion(cambios)
+  Prop --> Ctrl : nueva versión en borrador
+  Ctrl --> View : mostrarNuevaVersion(propuesta)
+  View --> Comercial : muestra nueva versión
+end
+
+@enduml

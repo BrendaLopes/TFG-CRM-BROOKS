@@ -15,41 +15,41 @@ skinparam participant {
   BorderColor<<E>> #6c8ebf
 }
 
-actor "Usuario\n(Captación / Comercial)" as Usuario
+actor "Usuario de recepción\n/ Comercial" as Usuario
 
 participant "RegistroLeadView" as View <<B>>
 participant "RegistrarLeadController" as Ctrl <<C>>
-participant "Lead" as LeadModel <<E>>
-participant "Cliente" as ClienteModel <<E>>
+participant "Contacto" as Contacto <<E>>
+participant "Lead" as Lead <<E>>
 
-Usuario -> View : acceder al formulario de nuevo lead
-View --> Usuario : muestra formulario vacío
+Usuario -> View : introducir datos del lead
+View -> Ctrl : registrarLead(datos, usuarioId)
 
-Usuario -> View : introducir datos del contacto\n(nombre, empresa, canal, responsable)
-View -> Ctrl : registrarLead(datosContacto)
+Ctrl -> Contacto : buscarCoincidencias(email, telefono, documento)
 
-Ctrl -> ClienteModel : buscarPorCnpjONombre(empresa)
+alt posible duplicado
+  Contacto --> Ctrl : contacto coincidente
+  Ctrl --> View : mostrarAlertaDuplicado(contacto)
+  View --> Usuario : solicita confirmación
 
-alt contacto ya existe
-  ClienteModel --> Ctrl : registro encontrado
-  Ctrl --> View : alertarPosibleDuplicado(datosExistente)
-  View --> Usuario : muestra aviso de posible duplicado
-
-  alt usuario confirma registro
-    Usuario -> View : confirmarRegistro()
-    View -> Ctrl : confirmarYRegistrar()
-  else usuario descarta
-    Usuario -> View : cancelar()
-    View --> Usuario : formulario descartado
+  alt el usuario confirma el registro
+    Usuario -> View : registrar de todas formas
+    View -> Ctrl : confirmarRegistro(datos, usuarioId)
+    Ctrl -> Lead : crear(datos, usuarioId)
+    Lead --> Ctrl : lead creado
+    Ctrl --> View : mostrarConfirmacion(lead)
+    View --> Usuario : lead registrado
+  else el usuario cancela
+    Usuario -> View : cancelar registro
+    View --> Usuario : registro cancelado
   end
-else contacto no existe
-  ClienteModel --> Ctrl : sin coincidencias
+
+else sin coincidencias
+  Contacto --> Ctrl : sin coincidencias
+  Ctrl -> Lead : crear(datos, usuarioId)
+  Lead --> Ctrl : lead creado
+  Ctrl --> View : mostrarConfirmacion(lead)
+  View --> Usuario : lead registrado
 end
-
-Ctrl -> LeadModel : crearLead(datosContacto, usuarioId)
-LeadModel --> Ctrl : lead creado (estado: LEAD)
-
-Ctrl --> View : mostrarLeadRegistrado(leadId)
-View --> Usuario : lead disponible para evaluación
 
 @enduml

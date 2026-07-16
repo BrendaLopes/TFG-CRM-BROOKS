@@ -17,8 +17,24 @@ class GenerarCotizacionController <<Controller>> {
   + iniciarCotizacion(oportunidadId)
   + buscarTarifa(residuoId, destinoFinal, unidad)
   + calcularPrecioSugerido(tarifa, cantidad)
-  + aplicarExcedente(cantidad, franquicia, precioExcedente)
+  + aplicarExcedente(cantidad, franquicia, importeExcedente)
   + crearBorradorCotizacion(items)
+}
+
+class GenerarOrdenServicioController <<Controller>> {
+  + generarOrdenServicio(oportunidadId)
+  + recopilarDatosOrden(oportunidadId)
+}
+
+class TarifaBase <<Entity>> {
+  - residuoId
+  - importeTransporte
+  - importeDestinoFinal
+  - franquicia
+  - importeExcedente
+  - unidadMedida
+  - destinoFinal
+  - activa
 }
 
 class Cotizacion <<Entity>> {
@@ -38,28 +54,20 @@ class ItemCotizacion <<Entity>> {
   + registrarAjusteManual(precioFinal, justificacion)
 }
 
-class TarifaBase <<Entity>> {
-  - precioUnitario
-  - franquiciaMinima
-  - precioExcedente
-  - unidadMedida
-  - destinoFinal
-  - activa
-}
-
 class OrdenServicio <<Entity>> {
   - numeroRegistroSILC
   - dataExecucao
   - unidadeOperacional
-  + generarPayloadSILC()
   + validarDatosObligatorios()
 }
 
-GenerarCotizacionController -down-> Cotizacion : crea
-GenerarCotizacionController -down-> ItemCotizacion : crea
-GenerarCotizacionController -right-> TarifaBase : consulta
+GenerarCotizacionController --> TarifaBase : consulta
+GenerarCotizacionController --> Cotizacion : crea
+GenerarCotizacionController --> ItemCotizacion : crea
 
-Cotizacion -right-> ItemCotizacion : contiene
-Cotizacion ..> OrdenServicio : aporta datos para handover
+Cotizacion "1" *-- "1..*" ItemCotizacion : contiene
+
+GenerarOrdenServicioController --> Cotizacion : consulta datos económicos
+GenerarOrdenServicioController --> OrdenServicio : crea
 
 @enduml

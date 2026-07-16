@@ -37,6 +37,18 @@ entity Cotizacion {
   observaciones : TEXT
 }
 
+entity ItemServicioSolicitado {
+  * id : UUID <<PK>>
+  --
+  * solicitudId : UUID <<FK>>
+  * residuoId : UUID <<FK>>
+  cantidadEstimada : DECIMAL
+  unidadMedida : ENUM
+  destinoFinal : VARCHAR
+  acondicionamiento : VARCHAR
+  descripcionDetallada : TEXT
+}
+
 entity ItemCotizacion {
   * id : UUID <<PK>>
   --
@@ -46,23 +58,15 @@ entity ItemCotizacion {
   descripcion : VARCHAR
   cantidad : DECIMAL
   unidad : VARCHAR
+  importeTransporteAplicado : DECIMAL
+  importeDestinoFinalAplicado : DECIMAL
+  franquiciaAplicada : DECIMAL
+  importeExcedenteAplicado : DECIMAL
   precioSugerido : DECIMAL
   precioFinal : DECIMAL
   subtotal : DECIMAL
-  franquicia : DECIMAL
   ajusteManual : BOOLEAN
   justificacionAjuste : TEXT
-}
-
-entity ItemServicioSolicitado {
-  * id : UUID <<PK>>
-  --
-  * solicitudId : UUID <<FK>>
-  * residuoId : UUID <<FK>>
-  cantidadEstimada : DECIMAL
-  unidadMedida : ENUM
-  acondicionamiento : VARCHAR
-  descripcionDetallada : TEXT
 }
 
 entity Residuo {
@@ -80,12 +84,13 @@ entity TarifaBase {
   * id : UUID <<PK>>
   --
   * residuoId : UUID <<FK>>
-  categoria : VARCHAR
+  codigoServicio : VARCHAR
   destinoFinal : VARCHAR
   unidadMedida : ENUM
-  precioUnitario : DECIMAL
-  franquiciaMinima : DECIMAL
-  precioExcedente : DECIMAL
+  importeTransporte : DECIMAL
+  importeDestinoFinal : DECIMAL
+  franquicia : DECIMAL
+  importeExcedente : DECIMAL
   vigencia : DATE
   activa : BOOLEAN
 }

@@ -25,13 +25,14 @@ participant "OrdenServicio" as OS <<E>>
 
 note right of CerrarCtrl
   Flujo principal: oportunidad ganada.
-  Para los casos perdida y no viable, el controlador actualiza el estado y registra el motivo sin generar OS.
+  En los cierres como perdida o no viable, 
+  el controlador actualiza el estado y registra el motivo sin generar una orden de servicio.
 end note
 
 Comercial -> View : registrar cierre como ganada
 View -> CerrarCtrl : cerrarComoGanada(oportunidadId)
 CerrarCtrl -> Op : actualizarEstado(GANADA)
-CerrarCtrl -> Prop : marcarAceptada()
+CerrarCtrl -> Prop : obtenerPropuestaAceptada()
 CerrarCtrl -> OSCtrl : generarOrdenServicio(oportunidadId)
 
 OSCtrl -> Op : obtenerDatosServicio()

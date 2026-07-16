@@ -1,9 +1,11 @@
 @startuml
-title Diagrama de clases del análisis de arquitectura
+title Distribución de clases de análisis por paquetes MVC
+
 top to bottom direction
 skinparam PackageBorderColor #444444
 skinparam PackageBackgroundColor #FAFAFA
 skinparam defaultFontSize 11
+skinparam linetype ortho
 hide stereotype
 
 skinparam class {
@@ -15,7 +17,7 @@ skinparam class {
   BorderColor<<E>> #6c8ebf
 }
 
-package "Views"  {
+package "Views" {
   class LoginView <<B>>
   class PipelineView <<B>>
   class RegistroLeadView <<B>>
@@ -25,11 +27,14 @@ package "Views"  {
   class PropuestaView <<B>>
   class OrdenServicioView <<B>>
   class TarifasView <<B>>
+  class ConfiguracionFormularioView <<B>>
 }
 
 package "Controllers" {
+  class AutenticacionController <<C>>
   class RegistrarLeadController <<C>>
   class ActualizarLeadController <<C>>
+  class CualificarLeadController <<C>>
   class GestionarOportunidadController <<C>>
   class RecogerDatosServicioController <<C>>
   class GenerarCotizacionController <<C>>
@@ -38,6 +43,7 @@ package "Controllers" {
   class RegistrarInteraccionesController <<C>>
   class CerrarOportunidadController <<C>>
   class GenerarOrdenServicioController <<C>>
+  class ExportarOrdenServicioController <<C>>
   class GestionarTarifasController <<C>>
   class ConfigurarFormularioController <<C>>
 }

@@ -29,7 +29,7 @@ Comercial -> View : iniciar cotización
 
 View -> GenCtrl : iniciarCotizacion(oportunidadId)
 GenCtrl -> Solicitud : obtenerItemsServicio()
-Solicitud --> GenCtrl : lista de ítems
+Solicitud --> GenCtrl : lista de ítems solicitados
 
 loop por cada ítem solicitado
   GenCtrl -> Tarifa : buscarTarifa(residuo, destinoFinal, unidad)
@@ -42,7 +42,7 @@ loop por cada ítem solicitado
 end
 
 GenCtrl -> Cot : crearBorradorCotizacion(items)
-Cot --> GenCtrl : cotización borrador
+Cot --> GenCtrl : cotización borrador con ítems pendientes identificados
 GenCtrl --> View : mostrarBorradorCotizacion(cotizacion)
 View --> Comercial : muestra precios sugeridos
 
