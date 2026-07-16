@@ -1,37 +1,45 @@
 @startuml
-title Estado de la Oportunidad
+title Estado de la oportunidad
 
-[*] --> LEAD : registro
+skinparam defaultFontSize 11
+skinparam nodesep 25
+skinparam ranksep 35
 
-LEAD --> NO_VIABLE : descartar en evaluación inicial
-LEAD --> CUALIFICADA : cualificar lead
+state "CUALIFICADA" as CUALIFICADA
+state "EN RECOGIDA DE DATOS" as EN_RECOGIDA_DE_DATOS
+state "EN PREPARACION DE PROPUESTA" as EN_PREPARACION_PROPUESTA
+state "EN NEGOCIACION" as EN_NEGOCIACION
+state "GANADA" as GANADA
+state "PERDIDA" as PERDIDA
+state "NO VIABLE" as NO_VIABLE
 
-CUALIFICADA --> EN_RECOGIDA_DE_DATOS : recoger datos
+[*] --> CUALIFICADA
+
+CUALIFICADA --> EN_RECOGIDA_DE_DATOS : iniciar la recogida de datos
+
+EN_RECOGIDA_DE_DATOS --> EN_PREPARACION_PROPUESTA : iniciar la cotización
 EN_RECOGIDA_DE_DATOS --> NO_VIABLE : servicio no viable
-EN_RECOGIDA_DE_DATOS --> PROPUESTA_EN_ELABORACION : iniciar cotización
 
-PROPUESTA_EN_ELABORACION --> PROPUESTA_ENVIADA : enviar propuesta
+EN_PREPARACION_PROPUESTA --> EN_NEGOCIACION : enviar la propuesta
 
-PROPUESTA_ENVIADA --> EN_NEGOCIACION : solicitar cambios
-PROPUESTA_ENVIADA --> GANADA : aceptar
-PROPUESTA_ENVIADA --> PERDIDA : rechazar
+EN_NEGOCIACION --> GANADA : alcanzar un acuerdo
+EN_NEGOCIACION --> PERDIDA : cerrar sin acuerdo
 
-EN_NEGOCIACION --> PROPUESTA_ENVIADA : nueva versión
-EN_NEGOCIACION --> GANADA : acuerdo
-EN_NEGOCIACION --> PERDIDA : sin acuerdo
+GANADA --> [*] : generar la orden de servicio
+PERDIDA --> [*] : registrar el motivo
+NO_VIABLE --> [*] : registrar el motivo
 
-GANADA --> [*] : generar orden de servicio
-PERDIDA --> [*] : registrar motivo
-NO_VIABLE --> [*] : registrar motivo
+CUALIFICADA : Supera la evaluación inicial
+EN_RECOGIDA_DE_DATOS : Recopilación de datos del servicio
+EN_PREPARACION_PROPUESTA : Elaboración de la cotización y la propuesta
+EN_NEGOCIACION : Condiciones en revisión con el cliente
+GANADA : Oportunidad cerrada con acuerdo
+PERDIDA : Oportunidad cerrada sin acuerdo
+NO_VIABLE : Servicio que no puede ejecutarse
 
-LEAD : Contacto registrado
-CUALIFICADA : Lead con interés comercial
-EN_RECOGIDA_DE_DATOS : Recogida de datos del servicio
-PROPUESTA_EN_ELABORACION : Cotización y propuesta en curso
-PROPUESTA_ENVIADA : Propuesta enviada
-EN_NEGOCIACION : Iteración con el cliente
-GANADA : Contrato cerrado
-PERDIDA : Oportunidad perdida
-NO_VIABLE : Servicio no viable
+note bottom of EN_RECOGIDA_DE_DATOS
+  Puede incluir una visita técnica
+  cuando sea necesaria.
+end note
 
 @enduml

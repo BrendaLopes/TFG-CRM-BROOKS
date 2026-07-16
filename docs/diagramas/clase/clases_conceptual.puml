@@ -1,8 +1,10 @@
 @startuml
+
 skinparam classAttributeIconSize 0
 skinparam shadowing false
 skinparam nodesep 100
 skinparam ranksep 100
+
 hide circle
 hide members
 
@@ -11,38 +13,39 @@ class Lead
 class Cliente
 class Contacto
 class Oportunidad
-class HistorialSeguimiento
-class OrdenServicio
+class "Historial de seguimiento" as HistorialSeguimiento
+class "Orden de servicio" as OrdenServicio
 class Propuesta
-class SolicitudServicio
+class "Solicitud de servicio" as SolicitudServicio
 class Cotizacion
-class ItemCotizacion
-class ItemServicioSolicitado
+class "Ítem de cotización" as ItemCotizacion
+class "Ítem de servicio solicitado" as ItemServicioSolicitado
 class Residuo
-class TarifaBase
+class "Tarifa base" as TarifaBase
 
 Usuario -right-> Lead : registra
 Lead -right-> Cliente : se vincula a
-Cliente -right-> Contacto : tiene
+Cliente "1" -right-> "1..*" Contacto 
 
-Lead -down-> Oportunidad : origina
-Cliente -down-> Oportunidad : asociada a
-Usuario -down-> Oportunidad : gestiona
+Lead "1" -down-> "0..*" Oportunidad : origina
+Cliente "0..1" -down-> "0..*" Oportunidad : se asocia a
+Usuario "1" -down-> "0..*" Oportunidad : gestiona
 
-Oportunidad -left-> HistorialSeguimiento
-Oportunidad -right-> OrdenServicio : genera si ganada
+Oportunidad "1" -left-> "0..*" HistorialSeguimiento : registra
+Oportunidad "1" -right-> "0..1" OrdenServicio : genera
 
-Oportunidad -down-> Propuesta
-Oportunidad -down-> SolicitudServicio
-Propuesta -[hidden]left- SolicitudServicio
+Oportunidad "1" -down-> "0..*" Propuesta
+Oportunidad "1" -down-> "1" SolicitudServicio
 
-SolicitudServicio -down- ItemServicioSolicitado
-Cotizacion .right.> Propuesta : sustenta
-SolicitudServicio -right-> Cotizacion : origina
-Cotizacion -down- ItemCotizacion
+SolicitudServicio "1" -down-> "1..*" ItemServicioSolicitado
+SolicitudServicio "1" -right-> "0..*" Cotizacion : origina
 
-ItemCotizacion .left.> ItemServicioSolicitado : referencia
-ItemCotizacion .down.> TarifaBase : usa tarifa
-ItemServicioSolicitado -down-> Residuo
-Residuo -right-> TarifaBase
+Cotizacion "1" -down-> "1..*" ItemCotizacion
+Cotizacion "1" -right-> "1" Propuesta : base para
+
+ItemCotizacion "0..*" .left.> "1" ItemServicioSolicitado : referencia
+ItemCotizacion "0..*" .down.> "1" TarifaBase : usa tarifa
+ItemServicioSolicitado "0..*" -down-> "1" Residuo
+Residuo "1" -right-> "0..*" TarifaBase : dispone de
+
 @enduml

@@ -1,24 +1,24 @@
 @startuml
-title Estado de la Propuesta
+title Estado de la propuesta
 
-[*] --> BORRADOR : creación
+[*] --> BORRADOR : crear propuesta
 
 BORRADOR --> ENVIADA : enviar al cliente
 
-ENVIADA --> EN_REVISION : cliente solicita cambios
-ENVIADA --> ACEPTADA : cliente acepta
-ENVIADA --> RECHAZADA : cliente rechaza
+ENVIADA --> EN_REVISION : el cliente solicita cambios
+ENVIADA --> ACEPTADA : el cliente acepta
+ENVIADA --> RECHAZADA : el cliente rechaza
 
-EN_REVISION --> ENVIADA : nueva versión enviada
-EN_REVISION --> RECHAZADA : descartada
+EN_REVISION --> ENVIADA : enviar nueva versión
+EN_REVISION --> RECHAZADA : descartar propuesta
 
 ACEPTADA --> [*]
 RECHAZADA --> [*]
 
 BORRADOR : Propuesta en elaboración
 ENVIADA : Propuesta enviada al cliente
-EN_REVISION : Ajustes solicitados por el cliente
-ACEPTADA : Propuesta aceptada
-RECHAZADA : Propuesta rechazada
+EN_REVISION : Propuesta en revisión por cambios solicitados
+ACEPTADA : Propuesta aceptada por el cliente
+RECHAZADA : Propuesta rechazada o descartada
 
 @enduml
