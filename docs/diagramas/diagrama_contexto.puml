@@ -6,18 +6,18 @@ skinparam ranksep 80
 
 left to right direction
 
-actor "Usuario de captación" as Captacion
+actor "Recepción" as Recepcion
 actor "Comercial" as Comercial
 actor "Administrador" as Admin
-actor "Cliente" as Cliente
-actor "Operaciones" as Operaciones
 
-rectangle "Sistema CRM\nBrooks Ambiental" as Sistema {
-}
+rectangle "Sistema CRM\nBrooks Ambiental" as Sistema
 
-Captacion --> Sistema : Registra leads
-Comercial --> Sistema : Gestiona oportunidades\nCotizaciones y propuestas\nHistorial de negociación
-Admin --> Sistema : Configura tarifas\ny parámetros
-Sistema --> Cliente : Propuesta comercial
-Sistema --> Operaciones : Orden de servicio
+Recepcion --> Sistema : Datos iniciales del lead
+
+Comercial --> Sistema : Datos de nuevos leads\nOportunidades, cotizaciones,\npropuestas y seguimientos
+
+Sistema --> Comercial : Pipeline e historial\nPropuesta comercial\nOrden de servicio
+
+Admin --> Sistema : Tarifas, parámetros\ny usuarios
+
 @enduml

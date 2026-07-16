@@ -1,6 +1,13 @@
 @startuml
 title Estado de la propuesta
 
+
+state "BORRADOR" as BORRADOR
+state "ENVIADA" as ENVIADA
+state "EN REVISION" as EN_REVISION
+state "ACEPTADA" as ACEPTADA
+state "RECHAZADA" as RECHAZADA
+
 [*] --> BORRADOR : crear propuesta
 
 BORRADOR --> ENVIADA : enviar al cliente

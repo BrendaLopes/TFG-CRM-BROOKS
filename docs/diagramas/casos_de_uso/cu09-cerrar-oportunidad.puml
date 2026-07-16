@@ -3,37 +3,46 @@ skinparam shadowing false
 
 |Comercial|
 start
-:Accede a la oportunidad en curso;
-:Selecciona cerrar oportunidad\ne indica el resultado;
+:Accede a la oportunidad;
+:Selecciona cerrar oportunidad;
+:Indica el resultado del cierre;
 
-if (¿Resultado?) then (Ganada)
-  |Sistema|
-  :Actualiza estado a Ganada;
-  :Genera orden de servicio\ncon datos técnicos y comerciales;
+if (\n¿La oportunidad se cierra \ncomo ganada?\n) then (no)
+
   |Comercial|
-  if (¿La orden es correcta?) then (sí)
+  :Selecciona Perdida o \nNo viable;
+  :Registra el motivo \ndel cierre;
+
+  |Sistema|
+  :Actualiza el estado a\nPerdida o No viable;
+  :Guarda el motivo\n del cierre;
+
+  |Comercial|
+  :Oportunidad cerrada\nsin generar una orden\nde servicio;
+
+else (sí)
+
+  |Sistema|
+  :Actualiza el estado \nde la oportunidad \na Ganada;
+  :Recupera los datos \ndel cliente,\ndel servicio, \ny de la propuesta;
+  :Genera la orden \nde servicio;
+  :Guarda la orden \nasociada a la \noportunidad;
+
+  |Comercial|
+  :Revisa la orden de servicio;
+
+  if (¿Exporta la orden?) then (sí)
     |Sistema|
-    :Marca la orden como lista\npara operaciones;
-  else (no)
+    :Genera el archivo \nexportable;
     |Comercial|
-    :Corrige los datos de la orden;
-    |Sistema|
-    :Actualiza la orden;
+    :Descarga la orden de servicio;
+  else (no)
   endif
-elseif (¿Resultado?) then (Perdida)
-  |Comercial|
-  :Registra el motivo de pérdida;
-  |Sistema|
-  :Actualiza estado a Perdida;
-  :Registra motivo en el historial;
-else (No viable)
-  |Comercial|
-  :Registra el motivo de descarte;
-  |Sistema|
-  :Actualiza estado a No viable;
-  :Registra motivo en el historial;
+
+  :Orden disponible para su\ntraspaso a operaciones;
+
+
 endif
 
-:Oportunidad cerrada.\nPipeline actualizado;
 stop
 @enduml

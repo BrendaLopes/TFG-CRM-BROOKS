@@ -13,13 +13,13 @@ start
 if (¿Tarifa base encontrada?) then (no)
   :Marca el ítem como\npendiente de precio manual;
 else (sí)
-  :Calcula precio sugerido\n(valorTransporte + valorDestinoFinal × cantidad);
+  :Calcula precio sugerido\n(importeTransporte + importeDestinoFinal\n × cantidad);
   if (¿Cantidad supera franquicia?) then (sí)
-    :Añade valorExcedente\nal cálculo;
+    :Añade el importe por excedente\nal cálculo;
   endif
 endif
 
-:Genera borrador de cotización\ncon totales sugeridos;
+:Genera borrador de cotización\ncon los ítems pendientes identificados;
 
 |Comercial|
 :Revisa los precios sugeridos;
