@@ -258,6 +258,7 @@ A diferencia del modelo de dominio, no describe entidades internas: muestra qui√
 
 
 ![Diagrama de contexto](docs/diagramas/img/diagramaContexto.svg)
+![Diagrama de contexto](docs/diagramas/img/diagramaContextoEstados.svg)
 
 ### Ideas clave
 
